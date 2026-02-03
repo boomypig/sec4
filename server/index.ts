@@ -1,13 +1,10 @@
 import express from "express";
 import "dotenv/config";
 
-// Node 18+ has global fetch.
-// If you're on older Node, install node-fetch.
 const app = express();
 const PORT = Number(process.env.PORT);
 
 // IMPORTANT: SEC endpoints require a descriptive User-Agent with contact info.
-// Use YOUR info (project name + your email).
 const SEC_HEADERS = {
   "User-Agent": process.env.USER_AGENT!,
   "Accept-Encoding": "gzip, deflate",
