@@ -1,4 +1,5 @@
 import express from "express";
+import { pool } from "./db/pool.js";
 import { XMLParser } from "fast-xml-parser";
 import "dotenv/config";
 
@@ -75,6 +76,14 @@ async function getTickerMap() {
   tickerMapFetchedAt = Date.now();
   return arr;
 }
+app.get("/health", async (_req, res) => {
+  try {
+    const r = await pool.query("SELECT NOW() as now");
+    res.json({ ok: true, now: r.rows[0].now });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
 
 // 1) Ticker -> CIK
 app.get("/api/cik/:ticker", async (req, res) => {
