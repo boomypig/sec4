@@ -4,6 +4,7 @@ type TickerParams = { ticker: string };
 
 export async function getCik(req: Request<TickerParams>, res: Response) {
   try {
+    console.log(req.params);
     const data = await sec.getCikForTicker(req.params.ticker);
     res.json(data);
   } catch (e: any) {

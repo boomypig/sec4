@@ -10,7 +10,7 @@ const PORT = Number(process.env.PORT ?? 3001);
 app.use(express.json());
 
 app.use("/health", healthRoutes);
-app.use("/api/form4", form4Routes);
+app.use("/api", form4Routes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
