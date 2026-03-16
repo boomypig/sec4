@@ -6,3 +6,11 @@ export async function getWatchlist(req: Request, res: Response) {
   3;
   return res.json([]);
 }
+
+export async function addToWatchlist(req:Request, res: Response){
+  return res.json([])
+}
+
+export async function removeFromWatchlist(req:Request,res:Response){
+  return res.json([])
+}

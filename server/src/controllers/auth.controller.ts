@@ -1,16 +1,14 @@
-import { Request, response, Response } from "express";
+import { Request, Response } from "express";
 import { pool } from "../db/pool.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { resourceLimits } from "node:worker_threads";
-import { error } from "node:console";
 const SALT_ROUNDS = 12;
 const JWT_SECRET = process.env.JWT_SECRET;
 export async function register(req: Request, res: Response) {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return response
+    return res
       .status(400)
       .json({ error: "Email and Password are required" });
   }
@@ -20,18 +18,18 @@ export async function register(req: Request, res: Response) {
   ]);
 
   if (existing.rows.length > 0) {
-    return response.status(409).json({ error: "Email already registered" });
+    return res.status(409).json({ error: "Email already registered" });
   }
 
   const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
 
   const result = await pool.query(
-    "INSERT INTO users (email,password) VALUES ($1,$2) RETURNING id",
+    "INSERT INTO users (email,password_hash) VALUES ($1,$2) RETURNING id",
     [email, password_hash],
   );
 
-  return res.status(200).json({
-    message: "Account fully registered successfullym, Please log in.",
+  return res.status(201).json({
+    message: "Account fully registered successfully, Please log in.",
     userId: result.rows[0].id,
   });
 }
@@ -39,7 +37,7 @@ export async function register(req: Request, res: Response) {
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
 
-  if (email! || password!) {
+  if (!email || !password) {
     return res.status(400).json({ error: "Email and Password required" });
   }
 
@@ -54,7 +52,7 @@ export async function login(req: Request, res: Response) {
 
   const user = result.rows[0];
 
-  const isvalid = bcrypt.compare(password, user.password_hash);
+  const isvalid = await bcrypt.compare(password, user.password_hash);
 
   if (!isvalid) {
     return res.status(401).json({

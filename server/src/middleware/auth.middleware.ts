@@ -3,9 +3,17 @@ import { Request, response, Response, NextFunction } from "express";
 import { error } from "node:console";
 import { json } from "node:stream/consumers";
 
+declare global{
+  namespace Express{
+    interface Request{
+      userId?:string;
+    }
+  }
+}
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export async function verify_user(
+export async function verifyUser(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -20,7 +28,7 @@ export async function verify_user(
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
 
-    (req as any).userId = decoded.userId;
+    req.userId = decoded.userId;
 
     next();
   } catch {
