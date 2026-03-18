@@ -10,7 +10,7 @@ declare global{
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export async function verifyUser(
+export function verifyUser(
   req: Request,
   res: Response,
   next: NextFunction,
