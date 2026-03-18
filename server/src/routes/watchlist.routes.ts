@@ -7,8 +7,8 @@ import {
 
 const router = Router();
 
-router.get("/", getWatchlist);
-router.post("/", addToWatchlist);
-router.delete("/:ticker", removeFromWatchlist);
+router.get("/getwatchlist", getWatchlist);
+router.post("/addwatchlist", addToWatchlist);
+router.delete("/:ticker",removeFromWatchlist);
 
 export default router;
