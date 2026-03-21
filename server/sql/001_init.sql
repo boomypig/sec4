@@ -64,12 +64,12 @@ CREATE TABLE IF NOT EXISTS form4_transactions(
   transaction_date TIMESTAMPTZ NOT NULL,
   transaction_code TEXT NOT NULL,
   acquired_disposed TEXT NOT NULL,
-  shares NUMERIC(15, 4) NOT NULL,
-  price_per_share NUMERIC(15, 4) NOT NULL,
-  value_total NUMERIC(15, 4) NOT NULL,
-  shares_owned_after NUMERIC(15, 4) NOT NULL,
+  shares NUMERIC(15, 4),
+  price_per_share NUMERIC(15, 4),
+  value_total NUMERIC(15, 4),
+  shares_owned_after NUMERIC(15, 4),
   ownership_nature TEXT NOT NULL,
   owner_name TEXT NOT NULL,
-  owner_title TEXT NOT NULL
+  owner_title TEXT 
 );
 
