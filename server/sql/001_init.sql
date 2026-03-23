@@ -70,6 +70,6 @@ CREATE TABLE IF NOT EXISTS form4_transactions(
   shares_owned_after NUMERIC(15, 4),
   ownership_nature TEXT NOT NULL,
   owner_name TEXT NOT NULL,
-  owner_title TEXT 
+  owner_title TEXT NOT NULL
 );
 

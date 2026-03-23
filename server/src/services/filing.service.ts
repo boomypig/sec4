@@ -12,10 +12,17 @@ export async function getOrFetchFiling(ticker: string) {
       [filing.accessionNumber],
     );
 
+    console.log(filing)
     console.log(result);
+    console.log("rows:", result.rows);
+    console.log("row count:", result.rows.length);
     if (result.rows.length === 0) {
       // filing doesn't exist in our DB yet
       // fetch, parse, store
+
+
     }
   }
 }
+
+getOrFetchFiling("AAPL")
