@@ -171,6 +171,8 @@ export async function getForm4Details(cik: string, accession: string) {
     const price = numOrUndef(
       t?.transactionAmounts?.transactionPricePerShare?.value,
     );
+    const sharesAfter = numOrUndef(t?.postTransactionAmounts?.sharesOwnedFollowingTransaction?.value)
+    
     const ownershipType = t?.ownershipNature?.directOrIndirectOwnership?.value;
 
     const totalValue =
@@ -184,6 +186,7 @@ export async function getForm4Details(cik: string, accession: string) {
       shares,
       price,
       totalValue,
+      sharesAfter,
       ownershipType,
     };
   });
@@ -218,15 +221,14 @@ export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
   if (!subRes.ok) throw new Error(`Submissions fetch failed: ${subRes.status}`);
   const submissions = (await subRes.json()) as any;
   const recent = submissions?.filings?.recent;
-
-  if (!recent) return { ticker, cik, filings: [] };
+  if (!recent && !submissions.name) return { name:"",ticker, cik, filings: [] };
 
   const forms: string[] = recent.form ?? [];
   const accessionNumbers: string[] = recent.accessionNumber ?? [];
   const filingDates: string[] = recent.filingDate ?? [];
   const primaryDocs: string[] = recent.primaryDocument ?? [];
   const reportDates: string[] = recent.reportDate ?? [];
-
+  const name: string = submissions.name;
   const out = [];
   for (let i = 0; i < forms.length; i++) {
     const form = forms[i];
@@ -241,5 +243,5 @@ export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
     }
   }
 
-  return { ticker, cik, filings: out.slice(0, 25) };
+  return { name,ticker, cik, filings: out.slice(0, 25) };
 }

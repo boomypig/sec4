@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS companies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticker TEXT NOT NULL UNIQUE,          -- e.g., AAPL
-  cik TEXT NOT NULL,                    -- store padded CIK
+  cik TEXT NOT NULL UNIQUE  ,                    -- store padded CIK
   name TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
