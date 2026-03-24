@@ -118,6 +118,7 @@ type ParsedTxn = {
   shares: number | undefined;
   price: number | undefined;
   totalValue: number | undefined;
+  sharesAfter:number | undefined;
   ownershipType?: string;
 };
 
