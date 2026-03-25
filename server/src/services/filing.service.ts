@@ -68,4 +68,4 @@ export async function getOrFetchFiling(ticker: string) {
 }
 
 
-getOrFetchFiling("AAPL")
+getOrFetchFiling("NVDA")

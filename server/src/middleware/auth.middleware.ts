@@ -8,8 +8,6 @@ declare global{
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
 export function verifyUser(
   req: Request,
   res: Response,
@@ -20,6 +18,7 @@ export function verifyUser(
   if (!token) {
     return res.status(401).json({ error: "user isn't logged in" });
   }
+  const JWT_SECRET = process.env.JWT_SECRET;
   if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is not set in environment variables");
   }

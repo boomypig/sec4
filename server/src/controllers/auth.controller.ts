@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import { pool } from "../db/pool.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-const SALT_ROUNDS = 12;
-const JWT_SECRET = process.env.JWT_SECRET;
 export async function register(req: Request, res: Response) {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  const SALT_ROUNDS = 12;
+
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -35,6 +36,9 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  const SALT_ROUNDS = 12;
+
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -49,9 +53,9 @@ export async function login(req: Request, res: Response) {
   if (result.rows.length === 0) {
     return res.status(401).json({ error: "Email or password invalid" });
   }
-
+  console.log(result)
   const user = result.rows[0];
-
+  console.log(user)
   const isvalid = await bcrypt.compare(password, user.password_hash);
 
   if (!isvalid) {
