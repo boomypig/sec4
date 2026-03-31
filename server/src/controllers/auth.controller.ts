@@ -9,9 +9,7 @@ export async function register(req: Request, res: Response) {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res
-      .status(400)
-      .json({ error: "Email and Password are required" });
+    return res.status(400).json({ error: "Email and Password are required" });
   }
 
   const existing = await pool.query("SELECT id FROM users WHERE email = $1", [
@@ -53,9 +51,9 @@ export async function login(req: Request, res: Response) {
   if (result.rows.length === 0) {
     return res.status(401).json({ error: "Email or password invalid" });
   }
-  console.log(result)
+  console.log(result);
   const user = result.rows[0];
-  console.log(user)
+  console.log(user);
   const isvalid = await bcrypt.compare(password, user.password_hash);
 
   if (!isvalid) {
@@ -76,5 +74,5 @@ export async function login(req: Request, res: Response) {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  return res.json({ message: "Logged in successfully" });
+  return res.status(200).json({ message: "Logged in successfully" });
 }

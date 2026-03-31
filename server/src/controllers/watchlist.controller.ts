@@ -11,7 +11,9 @@ export async function getWatchlist(req: Request, res: Response) {
       [user],
     );
     console.log(queryResult);
-    return res.json({ user: user, userCompanies: queryResult.rows });
+    return res
+      .status(200)
+      .json({ user: user, userCompanies: queryResult.rows });
   } catch (e) {
     return res.status(500).json({ error: "Failed to get watchlist" });
   } finally {
@@ -29,16 +31,15 @@ export async function addToWatchlist(req: Request, res: Response) {
       .json({ error: "NO company or there is no ID and they need to log in" });
   }
 
-  const checkCompanyQuery = await pool.query(
-    "SELECT id FROM companies WHERE id = $1",
-    [companyId],
-  );
-  if (checkCompanyQuery.rowCount === 0) {
-    return res.status(404).json({ error: "Company not found" });
-  }
-
   const client = await pool.connect();
   try {
+    const checkCompanyQuery = await pool.query(
+      "SELECT id FROM companies WHERE id = $1",
+      [companyId],
+    );
+    if (checkCompanyQuery.rowCount === 0) {
+      return res.status(404).json({ error: "Company not found" });
+    }
     await client.query("BEGIN");
 
     const insertToWatchlist = await client.query(
@@ -48,7 +49,7 @@ export async function addToWatchlist(req: Request, res: Response) {
 
     console.log(insertToWatchlist);
     await client.query("COMMIT");
-    return res.json({
+    return res.status(201).json({
       message: "Successfully added company to your watchlist",
     });
   } catch (e) {
@@ -61,6 +62,27 @@ export async function addToWatchlist(req: Request, res: Response) {
   }
 }
 
-export function removeFromWatchlist(req: Request, res: Response) {
-  return res.json({});
+export async function removeFromWatchlist(req: Request, res: Response) {
+  const user = req.userId;
+  const { companyId } = req.body;
+
+  if (!user || !companyId) {
+    return res.status(401).json({ error: "No company or Id exist" });
+  }
+  try {
+    const result = await pool.query(
+      "DELETE FROM watchlists WHERE user_id = $1 AND company_id = $2",
+      [user, companyId],
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found in watchlist" });
+    }
+    return res
+      .status(200)
+      .json({ message: "Successfully deleted from watchlist" });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: "Failed to dekete company to watchlist" });
+  }
 }
