@@ -33,14 +33,15 @@ export async function addToWatchlist(req: Request, res: Response) {
 
   const client = await pool.connect();
   try {
-    const checkCompanyQuery = await pool.query(
+    await client.query("BEGIN");
+    const checkCompanyQuery = await client.query(
       "SELECT id FROM companies WHERE id = $1",
       [companyId],
     );
     if (checkCompanyQuery.rowCount === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ error: "Company not found" });
     }
-    await client.query("BEGIN");
 
     const insertToWatchlist = await client.query(
       "INSERT INTO watchlists (user_id,company_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",

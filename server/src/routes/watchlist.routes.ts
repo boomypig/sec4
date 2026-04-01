@@ -9,6 +9,6 @@ const router = Router();
 
 router.get("/", getWatchlist);
 router.post("/", addToWatchlist);
-router.delete("/:ticker",removeFromWatchlist);
+router.delete("/", removeFromWatchlist);
 
 export default router;
