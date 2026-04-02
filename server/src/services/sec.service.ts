@@ -216,9 +216,7 @@ export async function getForm4Details(cik: string, accession: string) {
   };
 }
 
-export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
-  const { ticker, cik } = await getCikForTicker(tickerRaw);
-
+export async function getRecentForm4Filings(ticker: string, cik: string) {
   const submissionsUrl = `https://data.sec.gov/submissions/CIK${cik}.json`;
   const subRes = await fetch(submissionsUrl, { headers: SEC_HEADERS });
   if (!subRes.ok) throw new Error(`Submissions fetch failed: ${subRes.status}`);
@@ -233,6 +231,7 @@ export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
   const primaryDocs: string[] = recent.primaryDocument ?? [];
   const reportDates: string[] = recent.reportDate ?? [];
   const name: string = submissions.name;
+
   const out = [];
   for (let i = 0; i < forms.length; i++) {
     const form = forms[i];

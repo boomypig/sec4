@@ -49,8 +49,8 @@ CREATE INDEX IF NOT EXISTS watchlists_company_id_idx ON watchlists(company_id);
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   accession_no TEXT NOT NULL UNIQUE,
   form_type TEXT NOT NULL,
-  filing_date TIMESTAMPTZ NOT NULL,
-  period_of_report TIMESTAMPTZ NOT NULL,
+  filing_date TIMESTAMPTZ,
+  period_of_report TIMESTAMPTZ,
   parsed_json JSON NOT NULL
  );
 
@@ -60,15 +60,15 @@ CREATE INDEX IF NOT EXISTS watchlists_company_id_idx ON watchlists(company_id);
 CREATE TABLE IF NOT EXISTS form4_transactions(
   transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   filing_id UUID NOT NULL REFERENCES form4_filings(filing_id) ON DELETE CASCADE,
-  security_title TEXT NOT NULL,
-  transaction_date TIMESTAMPTZ NOT NULL,
-  transaction_code TEXT NOT NULL,
-  acquired_disposed TEXT NOT NULL,
+  security_title TEXT,
+  transaction_date TIMESTAMPTZ,
+  transaction_code TEXT,
+  acquired_disposed TEXT,
   shares NUMERIC(15, 4),
   price_per_share NUMERIC(15, 4),
   value_total NUMERIC(15, 4),
   shares_owned_after NUMERIC(15, 4),
-  ownership_nature TEXT NOT NULL,
+  ownership_nature TEXT,
   owner_name TEXT NOT NULL,
   owner_title TEXT
 );
