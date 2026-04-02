@@ -12,7 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+./server/scripts/company_tickers.json
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

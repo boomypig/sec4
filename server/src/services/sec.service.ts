@@ -118,7 +118,7 @@ type ParsedTxn = {
   shares: number | undefined;
   price: number | undefined;
   totalValue: number | undefined;
-  sharesAfter:number | undefined;
+  sharesAfter: number | undefined;
   ownershipType?: string;
 };
 
@@ -172,8 +172,10 @@ export async function getForm4Details(cik: string, accession: string) {
     const price = numOrUndef(
       t?.transactionAmounts?.transactionPricePerShare?.value,
     );
-    const sharesAfter = numOrUndef(t?.postTransactionAmounts?.sharesOwnedFollowingTransaction?.value)
-    
+    const sharesAfter = numOrUndef(
+      t?.postTransactionAmounts?.sharesOwnedFollowingTransaction?.value,
+    );
+
     const ownershipType = t?.ownershipNature?.directOrIndirectOwnership?.value;
 
     const totalValue =
@@ -222,7 +224,8 @@ export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
   if (!subRes.ok) throw new Error(`Submissions fetch failed: ${subRes.status}`);
   const submissions = (await subRes.json()) as any;
   const recent = submissions?.filings?.recent;
-  if (!recent && !submissions.name) return { name:"",ticker, cik, filings: [] };
+  if (!recent && !submissions.name)
+    return { name: "", ticker, cik, filings: [] };
 
   const forms: string[] = recent.form ?? [];
   const accessionNumbers: string[] = recent.accessionNumber ?? [];
@@ -244,5 +247,5 @@ export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
     }
   }
 
-  return { name,ticker, cik, filings: out.slice(0, 25) };
+  return { name, ticker, cik, filings: out.slice(0, 25) };
 }
