@@ -248,3 +248,37 @@ export async function getRecentForm4Filings(ticker: string, cik: string) {
 
   return { name, ticker, cik, filings: out.slice(0, 25) };
 }
+export async function getRecentForm4FilingsByTicker(tickerRaw: string) {
+  const { ticker, cik } = await getCikForTicker(tickerRaw);
+
+  const submissionsUrl = `https://data.sec.gov/submissions/CIK${cik}.json`;
+  const subRes = await fetch(submissionsUrl, { headers: SEC_HEADERS });
+  if (!subRes.ok) throw new Error(`Submissions fetch failed: ${subRes.status}`);
+  const submissions = (await subRes.json()) as any;
+  const recent = submissions?.filings?.recent;
+  if (!recent && !submissions.name)
+    return { name: "", ticker, cik, filings: [] };
+
+  const forms: string[] = recent.form ?? [];
+  const accessionNumbers: string[] = recent.accessionNumber ?? [];
+  const filingDates: string[] = recent.filingDate ?? [];
+  const primaryDocs: string[] = recent.primaryDocument ?? [];
+  const reportDates: string[] = recent.reportDate ?? [];
+  const name: string = submissions.name;
+
+  const out = [];
+  for (let i = 0; i < forms.length; i++) {
+    const form = forms[i];
+    if (form === "4" || form === "4/A") {
+      out.push({
+        form,
+        accessionNumber: accessionNumbers[i],
+        filingDate: filingDates[i],
+        reportDate: reportDates[i],
+        primaryDocument: primaryDocs[i],
+      });
+    }
+  }
+
+  return { name, ticker, cik, filings: out.slice(0, 25) };
+}

@@ -5,28 +5,43 @@ import { sleep } from "../utils/sleep.js";
 export async function getOrFetchFiling(ticker: string, cik: string) {
   const { name, filings } = await sec.getRecentForm4Filings(ticker, cik);
 
-  for (const filing of filings) {
-    const result = await pool.query(
-      "SELECT accession_no FROM form4_filings WHERE accession_no = $1",
-      [filing.accessionNumber],
+  // Step 1: upsert company in its own transaction
+  const companyClient = await pool.connect();
+  let companyId: string;
+  try {
+    await companyClient.query("BEGIN");
+    const compIdQuery = await companyClient.query(
+      "INSERT INTO companies (ticker,cik,name) VALUES ($1,$2,$3)" +
+        " ON CONFLICT (cik) DO UPDATE SET name = EXCLUDED.name RETURNING id",
+      [ticker, cik, name],
     );
+    companyId = compIdQuery.rows[0].id;
+    await companyClient.query("COMMIT");
+  } catch (e) {
+    await companyClient.query("ROLLBACK");
+    throw e;
+  } finally {
+    companyClient.release();
+  }
 
-    // Already in DB → skip
-    if (result.rows.length > 0) continue;
+  // Step 2: fetch all known accession numbers for this company in one query
+  const existing = await pool.query(
+    "SELECT accession_no FROM form4_filings WHERE company_id = $1",
+    [companyId],
+  );
+  const existingSet = new Set(existing.rows.map((r) => r.accession_no));
 
-    // New filing — delay before hitting EDGAR again
+  // Step 3: loop filings — check in memory, no DB round trip
+  for (const filing of filings) {
+    if (existingSet.has(filing.accessionNumber)) continue;
+
+    // New filing — delay before hitting EDGAR
     await sleep(125);
 
+    // Each filing gets its own transaction
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-
-      const compIdQuery = await client.query(
-        "INSERT INTO companies (ticker,cik,name) VALUES ($1,$2,$3)" +
-          " ON CONFLICT (cik) DO UPDATE SET name = EXCLUDED.name RETURNING id",
-        [ticker, cik, name],
-      );
-      const companyId = compIdQuery.rows[0].id;
 
       const fileTrxn = await sec.getForm4Details(cik, filing.accessionNumber);
       const fileTrxnJson = JSON.stringify(fileTrxn);
@@ -39,7 +54,7 @@ export async function getOrFetchFiling(ticker: string, cik: string) {
           filing.accessionNumber,
           filing.form,
           filing.filingDate,
-          filing.reportDate,
+          filing.reportDate || null,
           fileTrxnJson,
         ],
       );
@@ -54,7 +69,7 @@ export async function getOrFetchFiling(ticker: string, cik: string) {
           [
             filingId,
             trxn.securityTitle,
-            trxn.transactionDate,
+            trxn.transactionDate || null,
             trxn.transactionCode,
             trxn.acquiredDisposed,
             trxn.shares,
@@ -71,7 +86,7 @@ export async function getOrFetchFiling(ticker: string, cik: string) {
       await client.query("COMMIT");
     } catch (e) {
       await client.query("ROLLBACK");
-      throw e;
+      console.error(`Failed to insert filing ${filing.accessionNumber}:`, e);
     } finally {
       client.release();
     }

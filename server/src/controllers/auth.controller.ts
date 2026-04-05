@@ -76,3 +76,23 @@ export async function login(req: Request, res: Response) {
 
   return res.status(200).json({ message: "Logged in successfully" });
 }
+
+export async function getMe(req: Request, res: Response) {
+  try {
+    const result = await pool.query(
+      "SELECT id, email FROM users WHERE id = $1",
+      [req.userId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json({
+      userId: result.rows[0].id,
+      email: result.rows[0].email,
+    });
+  } catch (e) {
+    return res.status(500).json({ error: "Failed to get user" });
+  }
+}
