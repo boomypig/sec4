@@ -1,6 +1,6 @@
 # Form 4 Tracker
 
-> SEC Insider Trading Dashboard & Alert System
+> SEC Insider Trading Dashboard
 
 A full-stack web app that aggregates SEC Form 4 insider trading filings into a clean, personalized, real-time dashboard. When corporate insiders buy or sell their own company's stock they must file a Form 4 with the SEC. This app pulls that public data from EDGAR, stores it in PostgreSQL, and surfaces it through a modern React dashboard with watchlist management.
 
