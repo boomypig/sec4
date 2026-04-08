@@ -6,73 +6,89 @@ export default function Navbar() {
   const location = useLocation();
 
   return (
-    <header className="bg-surface text-primary font-sans tracking-tight w-full h-14 border-b border-outline-variant/[.15] flex justify-between items-center px-6 sticky top-0 z-50">
+    <header className="bg-surface text-primary font-sans tracking-tight w-full h-14 border-b border-outline-variant/[.1] flex justify-between items-center px-6 sticky top-0 z-50">
       {/* Left: Brand + Nav */}
       <div className="flex items-center gap-8">
-        <Link
-          to="/"
-          className="text-lg font-bold tracking-tighter text-primary"
-        >
-          Sovereign Analyst
-        </Link>
-        <div className="hidden md:flex items-center gap-6">
-          <Link
-            to="/"
-            className={`flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-sm ${
-              location.pathname === "/"
-                ? "bg-surface-container text-primary"
-                : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
-            }`}
+        <Link to="/" className="flex items-center gap-2">
+          <span
+            className="material-symbols-outlined text-primary-container text-lg"
+            style={{ fontVariationSettings: "'FILL' 1" }}
           >
-            <span className="material-symbols-outlined text-lg">dashboard</span>
-            <span>Dashboard</span>
-          </Link>
+            security
+          </span>
+          <div className="leading-none">
+            <span className="text-sm font-extrabold tracking-tighter text-primary uppercase">
+              Ametrine
+            </span>
+            <span className="text-[8px] block text-on-surface-variant uppercase tracking-[0.15em] -mt-0.5">
+              Intelligence
+            </span>
+          </div>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-1">
+          <NavLink to="/" label="Home" icon="dashboard" active={location.pathname === "/"} />
           {user && (
-            <Link
+            <NavLink
               to="/watchlist"
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-sm ${
-                location.pathname === "/watchlist"
-                  ? "bg-surface-container text-primary font-bold"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
-              }`}
-            >
-              <span className="material-symbols-outlined text-lg">
-                list_alt
-              </span>
-              <span>Watchlist</span>
-            </Link>
+              label="Watchlist"
+              icon="list_alt"
+              active={location.pathname === "/watchlist"}
+            />
           )}
-        </div>
+        </nav>
       </div>
 
       {/* Right: Auth */}
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <div className="h-8 w-8 rounded-sm bg-primary-container flex items-center justify-center overflow-hidden">
-              <span className="material-symbols-outlined text-on-primary-container text-sm">
-                person
-              </span>
-            </div>
-            <span className="text-on-surface font-medium text-sm hidden sm:inline">
+            <span className="text-on-surface-variant text-xs hidden sm:inline">
               {user.email}
             </span>
             <button
               onClick={logout}
-              className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors"
             >
+              <span className="material-symbols-outlined text-sm">logout</span>
               Logout
             </button>
           </>
         ) : (
           <Link
             to="/login"
-            className="metallic-gradient text-on-primary-fixed font-bold px-5 py-2 rounded-sm text-sm active:scale-95 transition-transform"
+            className="metallic-gradient text-on-primary-fixed font-bold px-5 py-1.5 rounded-sm text-xs"
           >
             Login
           </Link>
         )}
       </div>
     </header>
+  );
+}
+
+function NavLink({
+  to,
+  label,
+  icon,
+  active,
+}: {
+  to: string;
+  label: string;
+  icon: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-sm transition-all duration-200 ${
+        active
+          ? "bg-surface-container-high text-primary font-bold"
+          : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
+      }`}
+    >
+      <span className="material-symbols-outlined text-base">{icon}</span>
+      {label}
+    </Link>
   );
 }
