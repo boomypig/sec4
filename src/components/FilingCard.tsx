@@ -50,23 +50,38 @@ export function fmtValue(val: number | null): string {
 
 export function fmtFullValue(val: number | null): string {
   if (val == null) return "\u2014";
-  return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    "$" +
+    val.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 export function fmtShares(val: number | null): string {
   if (val == null) return "\u2014";
-  return val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return val.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export function fmtPrice(val: number | null): string {
   if (val == null) return "\u2014";
-  return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    "$" +
+    val.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 function fmtDate(d: string | null): string {
   if (!d) return "\u2014";
   try {
-    return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    return new Date(d).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -87,7 +102,8 @@ type Props = {
 };
 
 export default function FilingCard(props: Props) {
-  if (props.variant === "watchlist") return <WatchlistActivityCard {...props} />;
+  if (props.variant === "watchlist")
+    return <WatchlistActivityCard {...props} />;
   return <FeedCard {...props} />;
 }
 
@@ -116,14 +132,17 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
         {/* Company + insider */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-on-surface text-sm">{filing.company_name}</span>
+            <span className="font-bold text-on-surface text-sm">
+              {filing.company_name}
+            </span>
             <span className="text-[10px] bg-surface-container-lowest px-1.5 py-0.5 rounded-sm font-black text-on-surface-variant">
               {filing.form_type}
             </span>
           </div>
           {t && (
             <p className="text-xs text-on-surface-variant truncate">
-              {t.ownerName}{t.ownerTitle ? ` \u2022 ${t.ownerTitle}` : ""}
+              {t.ownerName}
+              {t.ownerTitle ? ` \u2022 ${t.ownerTitle}` : ""}
             </p>
           )}
         </div>
@@ -142,13 +161,17 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
         {/* Shares */}
         <div className="hidden md:block text-right flex-shrink-0 w-24">
           <p className="text-xs text-on-surface-variant">Shares</p>
-          <p className="text-sm font-bold tnum text-on-surface">{t ? fmtShares(t.shares) : "\u2014"}</p>
+          <p className="text-sm font-bold tnum text-on-surface">
+            {t ? fmtShares(t.shares) : "\u2014"}
+          </p>
         </div>
 
         {/* Value */}
         <div className="hidden md:block text-right flex-shrink-0 w-28">
           <p className="text-xs text-on-surface-variant">Value</p>
-          <p className={`text-sm font-bold tnum ${buy ? "text-tertiary" : "text-error"}`}>
+          <p
+            className={`text-sm font-bold tnum ${buy ? "text-tertiary" : "text-error"}`}
+          >
             {t ? fmtValue(t.totalValue) : "\u2014"}
           </p>
         </div>
@@ -156,7 +179,9 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
         {/* Date */}
         <div className="hidden lg:block text-right flex-shrink-0 w-28">
           <p className="text-xs text-on-surface-variant">Filed</p>
-          <p className="text-xs font-medium tnum text-on-surface">{fmtDate(filing.filing_date)}</p>
+          <p className="text-xs font-medium tnum text-on-surface">
+            {fmtDate(filing.filing_date)}
+          </p>
         </div>
 
         {/* Actions */}
@@ -184,7 +209,10 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
                 className="text-on-surface-variant/40 hover:text-error transition-colors"
                 title="Remove from watchlist"
               >
-                <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span
+                  className="material-symbols-outlined text-lg"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   bookmark
                 </span>
               </button>
@@ -218,31 +246,58 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-outline-variant/10 text-on-surface-variant">
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Insider</th>
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Action</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Shares</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Price</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Total Value</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Date</th>
+                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Insider
+                </th>
+                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Action
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Shares
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Price
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Total Value
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Date
+                </th>
               </tr>
             </thead>
             <tbody>
               {txns.map((tx, i) => {
                 const b = isBuy(tx.transactionCode, tx.acquiredDisposed);
                 return (
-                  <tr key={i} className="border-b border-outline-variant/5 last:border-none hover:bg-surface-container-high/50">
-                    <td className="py-2.5 px-3 text-on-surface font-medium">{tx.ownerName}</td>
+                  <tr
+                    key={i}
+                    className="border-b border-outline-variant/5 last:border-none hover:bg-surface-container-high/50"
+                  >
+                    <td className="py-2.5 px-3 text-on-surface font-medium">
+                      {tx.ownerName}
+                    </td>
                     <td className="py-2.5 px-3">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${b ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"}`}>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${b ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"}`}
+                      >
                         {txnLabel(tx.transactionCode, tx.acquiredDisposed)}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right tnum text-on-surface">{fmtShares(tx.shares)}</td>
-                    <td className="py-2.5 px-3 text-right tnum text-on-surface">{fmtPrice(tx.pricePerShare)}</td>
-                    <td className={`py-2.5 px-3 text-right tnum font-bold ${b ? "text-tertiary" : "text-error"}`}>
+                    <td className="py-2.5 px-3 text-right tnum text-on-surface">
+                      {fmtShares(tx.shares)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right tnum text-on-surface">
+                      {fmtPrice(tx.pricePerShare)}
+                    </td>
+                    <td
+                      className={`py-2.5 px-3 text-right tnum font-bold ${b ? "text-tertiary" : "text-error"}`}
+                    >
                       {fmtFullValue(tx.totalValue)}
                     </td>
-                    <td className="py-2.5 px-3 text-right tnum text-on-surface-variant">{fmtDate(tx.transactionDate)}</td>
+                    <td className="py-2.5 px-3 text-right tnum text-on-surface-variant">
+                      {fmtDate(tx.transactionDate)}
+                    </td>
                   </tr>
                 );
               })}
@@ -270,13 +325,19 @@ function WatchlistActivityCard({ filing, onUnwatch }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${buy ? "bg-tertiary" : "bg-error"}`} />
-          <span className="text-sm font-bold text-on-surface">{filing.ticker}</span>
+          <div
+            className={`w-2 h-2 rounded-full ${buy ? "bg-tertiary" : "bg-error"}`}
+          />
+          <span className="text-sm font-bold text-on-surface">
+            {filing.ticker}
+          </span>
           <span className="text-[10px] bg-surface-container-lowest px-1.5 py-0.5 rounded-sm font-black text-on-surface-variant">
             {filing.form_type}
           </span>
         </div>
-        <span className="text-xs text-on-surface-variant tnum">{fmtDate(filing.filing_date)}</span>
+        <span className="text-xs text-on-surface-variant tnum">
+          {fmtDate(filing.filing_date)}
+        </span>
       </div>
 
       {/* Title */}
@@ -290,7 +351,9 @@ function WatchlistActivityCard({ filing, onUnwatch }: Props) {
           {t.ownerName}
           {t.ownerTitle ? ` (${t.ownerTitle})` : ""}
           {" \u2014 "}
-          <span className={buy ? "text-tertiary font-bold" : "text-error font-bold"}>
+          <span
+            className={buy ? "text-tertiary font-bold" : "text-error font-bold"}
+          >
             {txnLabel(t.transactionCode, t.acquiredDisposed)}
           </span>
           {t.shares != null && ` ${fmtShares(t.shares)} shares`}
@@ -319,27 +382,50 @@ function WatchlistActivityCard({ filing, onUnwatch }: Props) {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-outline-variant/10 text-on-surface-variant">
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Insider</th>
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Action</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Shares</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Price</th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">Value</th>
+                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Insider
+                </th>
+                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Action
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Shares
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Price
+                </th>
+                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
+                  Value
+                </th>
               </tr>
             </thead>
             <tbody>
               {txns.map((tx, i) => {
                 const b = isBuy(tx.transactionCode, tx.acquiredDisposed);
                 return (
-                  <tr key={i} className="border-b border-outline-variant/5 last:border-none">
-                    <td className="py-2 px-3 text-on-surface font-medium">{tx.ownerName}</td>
+                  <tr
+                    key={i}
+                    className="border-b border-outline-variant/5 last:border-none"
+                  >
+                    <td className="py-2 px-3 text-on-surface font-medium">
+                      {tx.ownerName}
+                    </td>
                     <td className="py-2 px-3">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${b ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"}`}>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${b ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"}`}
+                      >
                         {txnLabel(tx.transactionCode, tx.acquiredDisposed)}
                       </span>
                     </td>
-                    <td className="py-2 px-3 text-right tnum text-on-surface">{fmtShares(tx.shares)}</td>
-                    <td className="py-2 px-3 text-right tnum text-on-surface">{fmtPrice(tx.pricePerShare)}</td>
-                    <td className={`py-2 px-3 text-right tnum font-bold ${b ? "text-tertiary" : "text-error"}`}>
+                    <td className="py-2 px-3 text-right tnum text-on-surface">
+                      {fmtShares(tx.shares)}
+                    </td>
+                    <td className="py-2 px-3 text-right tnum text-on-surface">
+                      {fmtPrice(tx.pricePerShare)}
+                    </td>
+                    <td
+                      className={`py-2 px-3 text-right tnum font-bold ${b ? "text-tertiary" : "text-error"}`}
+                    >
                       {fmtFullValue(tx.totalValue)}
                     </td>
                   </tr>
@@ -360,7 +446,9 @@ function WatchlistActivityCard({ filing, onUnwatch }: Props) {
           onClick={() => onUnwatch?.(filing.company_id)}
           className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-error transition-colors font-bold"
         >
-          <span className="material-symbols-outlined text-sm">bookmark_remove</span>
+          <span className="material-symbols-outlined text-sm">
+            bookmark_remove
+          </span>
           Unwatch
         </button>
       </div>
