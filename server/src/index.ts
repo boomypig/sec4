@@ -9,6 +9,7 @@ import healthRoutes from "./routes/health.routes.js";
 import form4Routes from "./routes/form4.routes.js";
 
 import watchlistRoutes from "./routes/watchlist.routes.js";
+import feedRoutes from "./routes/feed.routes.js";
 import { startScheduler } from "./services/scheduler.service.js";
 
 const app = express();
@@ -29,6 +30,7 @@ app.use("/api", form4Routes);
 app.use("/auth", authRoutes);
 
 app.use("/watchlist", verifyUser, watchlistRoutes);
+app.use("/api/feed", feedRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
