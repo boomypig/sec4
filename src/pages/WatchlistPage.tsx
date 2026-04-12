@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import FilingCard from "../components/FilingCard";
 import {
   isBuy,
-  txnLabel,
-  fmtShares,
-  fmtPrice,
-  fmtFullValue,
+  fmtValue,
+  transactionSentence,
 } from "../components/FilingCard";
-import type { Filing, Transaction } from "../components/FilingCard";
+import type { Filing } from "../components/FilingCard";
+import { BuySellBar, ActivitySparkline } from "../components/Charts";
+import Tooltip, { TOOLTIPS } from "../components/Tooltip";
 
 export default function WatchlistPage() {
   const [filings, setFilings] = useState<Filing[]>([]);
@@ -70,17 +70,23 @@ export default function WatchlistPage() {
     }
   }
 
-  const watchedTickers = getUniqueTickers(filings);
-  const txnRows = flattenTransactions(filings);
-  const stats = computeWatchlistStats(filings);
+  const watchedTickers = useMemo(() => getUniqueTickers(filings), [filings]);
+  const companyStats = useMemo(() => computeCompanyStats(filings), [filings]);
+  const globalStats = useMemo(() => computeGlobalStats(filings), [filings]);
+  const activityData = useMemo(() => computeTimeline(filings), [filings]);
 
   return (
     <main className="p-6 max-w-7xl mx-auto w-full space-y-6">
       {/* Header */}
       <section className="space-y-4">
-        <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">
-          Institutional Watchlist
-        </h1>
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">
+            Your Watchlist
+          </h1>
+          <p className="text-on-surface-variant text-sm mt-1">
+            Track insider activity for the companies you care about.
+          </p>
+        </div>
 
         {/* Search bar */}
         <form onSubmit={handleAddTicker} className="relative max-w-2xl">
@@ -92,14 +98,16 @@ export default function WatchlistPage() {
             value={ticker}
             onChange={(e) => setTicker(e.target.value.toUpperCase())}
             className="w-full bg-surface-container-high border-none focus:ring-1 focus:ring-primary/30 rounded-sm py-4 pl-12 pr-16 text-on-surface placeholder:text-on-surface-variant/40 transition-all"
-            placeholder="Enter ticker to track (e.g. MSFT, PLTR)..."
+            placeholder="Add a ticker to track (e.g. AAPL, MSFT, PLTR)..."
           />
           <button
             type="submit"
             disabled={adding}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-primary hover:text-on-surface transition-colors disabled:opacity-50"
           >
-            <span className="material-symbols-outlined">{adding ? "hourglass_top" : "add_circle"}</span>
+            <span className="material-symbols-outlined">
+              {adding ? "hourglass_top" : "add_circle"}
+            </span>
           </button>
         </form>
         {addError && (
@@ -132,198 +140,311 @@ export default function WatchlistPage() {
         )}
       </section>
 
+      {/* Loading */}
+      {loading && (
+        <div className="text-center py-12 text-on-surface-variant">
+          <span className="material-symbols-outlined text-4xl mb-2 block text-outline/40 animate-pulse">
+            hourglass_top
+          </span>
+          Loading watchlist...
+        </div>
+      )}
+      {error && <div className="text-center py-12 text-error">{error}</div>}
+
+      {/* Empty state */}
+      {!loading && !error && filings.length === 0 && (
+        <div className="bg-surface-container rounded-sm p-12 text-center space-y-4">
+          <span className="material-symbols-outlined text-5xl block text-outline/30">
+            playlist_add
+          </span>
+          <h2 className="text-lg font-bold text-on-surface">
+            Your watchlist is empty
+          </h2>
+          <p className="text-sm text-on-surface-variant max-w-md mx-auto">
+            Add tickers above to start tracking insider activity. You'll see
+            buy/sell signals, sentiment, and transaction summaries for each
+            company.
+          </p>
+          <div className="flex items-center justify-center gap-6 pt-4 text-xs text-on-surface-variant">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-tertiary text-base">
+                trending_up
+              </span>
+              See buying signals
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-error text-base">
+                trending_down
+              </span>
+              Track selling activity
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-base">
+                insights
+              </span>
+              Get sentiment insights
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main content: 8 cols */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Transaction History Table */}
-          <section>
-            <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant mb-4">
-              Watchlist Transaction History
-            </h2>
-
-            {loading && (
-              <div className="text-center py-12 text-on-surface-variant">
-                Loading...
-              </div>
-            )}
-            {error && (
-              <div className="text-center py-12 text-error">{error}</div>
-            )}
-
-            {!loading && !error && txnRows.length === 0 && (
-              <div className="bg-surface-container-high rounded-sm p-12 text-center">
-                <span className="material-symbols-outlined text-4xl mb-2 block text-outline/30">
-                  playlist_add
-                </span>
-                <p className="text-on-surface-variant text-sm">
-                  No transactions yet. Add tickers above to start tracking.
-                </p>
-              </div>
-            )}
-
-            {txnRows.length > 0 && (
-              <div className="bg-surface-container-high rounded-sm overflow-hidden border border-outline-variant/5">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-outline-variant/10">
-                        <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                          Asset
-                        </th>
-                        <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                          Action
-                        </th>
-                        <th className="text-right py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                          Shares
-                        </th>
-                        <th className="text-right py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                          Price
-                        </th>
-                        <th className="text-right py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                          Total Value
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {txnRows.slice(0, 10).map((row, i) => {
-                        const buy = isBuy(row.txn.transactionCode, row.txn.acquiredDisposed);
-                        return (
-                          <tr
-                            key={i}
-                            className="border-b border-outline-variant/5 last:border-none hover:bg-surface-container/50 transition-colors"
-                          >
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-sm bg-surface-container-lowest flex items-center justify-center text-[9px] font-bold text-primary border border-outline-variant/20">
-                                  {row.ticker}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-on-surface text-sm">
-                                    {row.companyName}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`text-[10px] px-2 py-0.5 rounded-sm font-bold ${
-                                  buy
-                                    ? "bg-tertiary/15 text-tertiary"
-                                    : "bg-error/15 text-error"
-                                }`}
-                              >
-                                {txnLabel(row.txn.transactionCode, row.txn.acquiredDisposed)}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right tnum text-on-surface font-medium">
-                              {fmtShares(row.txn.shares)}
-                            </td>
-                            <td className="py-3 px-4 text-right tnum text-on-surface font-medium">
-                              {fmtPrice(row.txn.pricePerShare)}
-                            </td>
-                            <td
-                              className={`py-3 px-4 text-right tnum font-bold ${
-                                buy ? "text-tertiary" : "text-error"
-                              }`}
-                            >
-                              {fmtFullValue(row.txn.totalValue)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* Activity Feed */}
-          {filings.length > 0 && (
+      {!loading && !error && filings.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main content: 8 cols */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Company Summary Cards */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant">
-                  Watchlist Activity Feed
-                </h2>
-              </div>
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-sm">
+                  dashboard
+                </span>
+                Company Summaries
+              </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filings.map((f) => (
-                  <FilingCard
-                    key={f.filing_id}
-                    filing={f}
-                    variant="watchlist"
-                    onUnwatch={handleRemove}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {companyStats.map((cs) => (
+                  <CompanySummaryCard
+                    key={cs.companyId}
+                    stats={cs}
+                    onRemove={handleRemove}
                   />
                 ))}
               </div>
             </section>
-          )}
+
+            {/* Recent Activity Feed */}
+            <section>
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-sm">
+                  bolt
+                </span>
+                Recent Activity
+              </h2>
+
+              <div className="space-y-1 bg-surface-container-high/30 rounded-sm overflow-hidden border border-outline-variant/5">
+                {filings.slice(0, 15).map((f) => (
+                  <FilingCard
+                    key={f.filing_id}
+                    filing={f}
+                    variant="feed"
+                    onUnwatch={handleRemove}
+                    watchedIds={
+                      new Set(watchedTickers.map((t) => t.companyId))
+                    }
+                  />
+                ))}
+              </div>
+
+              {filings.length > 15 && (
+                <p className="text-xs text-on-surface-variant text-center mt-3">
+                  Showing 15 of {filings.length} filings
+                </p>
+              )}
+            </section>
+          </div>
+
+          {/* Sidebar: 4 cols */}
+          <aside className="lg:col-span-4 space-y-6">
+            {/* Overview stats */}
+            <div className="bg-surface-container rounded-sm p-5 space-y-4">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] font-bold text-on-surface-variant">
+                Watchlist Overview
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-surface-container-high p-3 rounded-sm">
+                  <p className="text-[10px] text-on-surface-variant uppercase">
+                    Companies
+                  </p>
+                  <p className="text-xl font-black tracking-tighter text-on-surface tnum">
+                    {watchedTickers.length}
+                  </p>
+                </div>
+                <div className="bg-surface-container-high p-3 rounded-sm">
+                  <p className="text-[10px] text-on-surface-variant uppercase">
+                    Filings
+                  </p>
+                  <p className="text-xl font-black tracking-tighter text-on-surface tnum">
+                    {filings.length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sentiment gauge */}
+              <div className="bg-surface-container-high p-3 rounded-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-on-surface-variant uppercase">
+                    Overall Sentiment
+                  </p>
+                  <Tooltip
+                    content={
+                      globalStats.buys > globalStats.sells
+                        ? TOOLTIPS.bullish
+                        : TOOLTIPS.bearish
+                    }
+                  >
+                    <span className="material-symbols-outlined text-sm text-on-surface-variant cursor-help">
+                      info
+                    </span>
+                  </Tooltip>
+                </div>
+                <p
+                  className={`text-lg font-black ${
+                    globalStats.buys > globalStats.sells
+                      ? "text-tertiary"
+                      : globalStats.buys === globalStats.sells
+                        ? "text-on-surface-variant"
+                        : "text-error"
+                  }`}
+                >
+                  {globalStats.buys > globalStats.sells
+                    ? "Bullish"
+                    : globalStats.buys === globalStats.sells
+                      ? "Neutral"
+                      : "Bearish"}
+                </p>
+                {globalStats.buys + globalStats.sells > 0 && (
+                  <div className="mt-2 h-1.5 bg-surface-container-lowest rounded-full overflow-hidden flex">
+                    <div
+                      className="bg-tertiary rounded-full"
+                      style={{
+                        width: `${(globalStats.buys / (globalStats.buys + globalStats.sells)) * 100}%`,
+                      }}
+                    />
+                    <div
+                      className="bg-error rounded-full"
+                      style={{
+                        width: `${(globalStats.sells / (globalStats.buys + globalStats.sells)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="flex justify-between mt-1.5 text-[10px]">
+                  <span className="text-tertiary font-bold tnum">
+                    {globalStats.buys} buys
+                  </span>
+                  <span className="text-error font-bold tnum">
+                    {globalStats.sells} sells
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts */}
+            <BuySellBar buys={globalStats.buys} sells={globalStats.sells} />
+            <ActivitySparkline data={activityData} />
+
+            {/* Feed status */}
+            <div className="bg-surface-container-high rounded-sm p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary" />
+                </span>
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Feed Connected
+                </span>
+              </div>
+            </div>
+          </aside>
         </div>
-
-        {/* Sidebar: 4 cols */}
-        <aside className="lg:col-span-4 space-y-6">
-          {/* Watchlist Analytics */}
-          <div className="bg-surface-container rounded-sm p-5 space-y-5">
-            <h3 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant">
-              Watchlist Analytics
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-surface-container-high p-4 rounded-sm">
-                <p className="text-[10px] text-on-surface-variant uppercase">
-                  Tracked Entities
-                </p>
-                <p className="text-2xl font-black tracking-tighter text-on-surface tnum">
-                  {watchedTickers.length}
-                </p>
-              </div>
-              <div className="bg-surface-container-high p-4 rounded-sm">
-                <p className="text-[10px] text-on-surface-variant uppercase">
-                  Total Filings
-                </p>
-                <p className="text-2xl font-black tracking-tighter text-on-surface tnum">
-                  {filings.length}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-surface-container-high p-4 rounded-sm">
-                <p className="text-[10px] text-on-surface-variant uppercase">
-                  Buy Txns
-                </p>
-                <p className="text-2xl font-black tracking-tighter text-tertiary tnum">
-                  {stats.buys}
-                </p>
-              </div>
-              <div className="bg-surface-container-high p-4 rounded-sm">
-                <p className="text-[10px] text-on-surface-variant uppercase">
-                  Sell Txns
-                </p>
-                <p className="text-2xl font-black tracking-tighter text-error tnum">
-                  {stats.sells}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Feed status */}
-          <div className="bg-surface-container-high rounded-sm p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary" />
-              </span>
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Feed Connected
-              </span>
-            </div>
-          </div>
-        </aside>
-      </div>
+      )}
     </main>
+  );
+}
+
+/* ── Company Summary Card ── */
+
+type CompanyStatsData = {
+  companyId: number;
+  ticker: string;
+  companyName: string;
+  filingCount: number;
+  buys: number;
+  sells: number;
+  totalValue: number;
+  latestSentence: string;
+};
+
+function CompanySummaryCard({
+  stats,
+  onRemove,
+}: {
+  stats: CompanyStatsData;
+  onRemove: (id: number) => void;
+}) {
+  const total = stats.buys + stats.sells;
+  const buyPct = total > 0 ? Math.round((stats.buys / total) * 100) : 0;
+  const isBullish = stats.buys > stats.sells;
+
+  return (
+    <div className="bg-surface-container rounded-sm p-4 space-y-3 hover:ring-1 hover:ring-outline-variant/20 transition-all">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-2 h-2 rounded-full ${isBullish ? "bg-tertiary" : total === 0 ? "bg-outline" : "bg-error"}`}
+          />
+          <span className="font-bold text-on-surface text-sm">
+            {stats.ticker}
+          </span>
+        </div>
+        <button
+          onClick={() => onRemove(stats.companyId)}
+          className="text-on-surface-variant/30 hover:text-error transition-colors"
+        >
+          <span className="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>
+
+      <p className="text-xs text-on-surface-variant truncate">
+        {stats.companyName}
+      </p>
+
+      {/* Buy vs Sell ratio bar */}
+      {total > 0 && (
+        <div className="space-y-1">
+          <div className="h-1.5 bg-surface-container-high rounded-full overflow-hidden flex">
+            <div
+              className="bg-tertiary rounded-full transition-all"
+              style={{ width: `${buyPct}%` }}
+            />
+            <div
+              className="bg-error rounded-full transition-all"
+              style={{ width: `${100 - buyPct}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-[10px]">
+            <span className="text-tertiary font-bold tnum">
+              {stats.buys} buy{stats.buys !== 1 ? "s" : ""}
+            </span>
+            <span className="text-error font-bold tnum">
+              {stats.sells} sell{stats.sells !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Stats row */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-on-surface-variant">
+          {stats.filingCount} filing{stats.filingCount !== 1 ? "s" : ""}
+        </span>
+        {stats.totalValue > 0 && (
+          <span className="font-bold text-on-surface tnum">
+            {fmtValue(stats.totalValue)} total
+          </span>
+        )}
+      </div>
+
+      {/* Latest activity sentence */}
+      {stats.latestSentence && (
+        <p className="text-[11px] text-on-surface-variant leading-relaxed border-t border-outline-variant/10 pt-2">
+          {stats.latestSentence}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -340,23 +461,42 @@ function getUniqueTickers(filings: Filing[]) {
   }));
 }
 
-type TxnRow = {
-  ticker: string;
-  companyName: string;
-  txn: Transaction;
-};
+function computeCompanyStats(filings: Filing[]): CompanyStatsData[] {
+  const map = new Map<number, CompanyStatsData>();
 
-function flattenTransactions(filings: Filing[]): TxnRow[] {
-  const rows: TxnRow[] = [];
   for (const f of filings) {
+    let cs = map.get(f.company_id);
+    if (!cs) {
+      cs = {
+        companyId: f.company_id,
+        ticker: f.ticker,
+        companyName: f.company_name,
+        filingCount: 0,
+        buys: 0,
+        sells: 0,
+        totalValue: 0,
+        latestSentence: "",
+      };
+      map.set(f.company_id, cs);
+    }
+    cs.filingCount++;
+
     for (const t of f.transactions || []) {
-      rows.push({ ticker: f.ticker, companyName: f.company_name, txn: t });
+      if (isBuy(t.transactionCode, t.acquiredDisposed)) cs.buys++;
+      else cs.sells++;
+      cs.totalValue += Math.abs(t.totalValue || 0);
+    }
+
+    // Set latest sentence from first transaction of first filing
+    if (!cs.latestSentence && f.transactions?.[0]) {
+      cs.latestSentence = transactionSentence(f.transactions[0], f.ticker);
     }
   }
-  return rows;
+
+  return Array.from(map.values()).sort((a, b) => b.filingCount - a.filingCount);
 }
 
-function computeWatchlistStats(filings: Filing[]) {
+function computeGlobalStats(filings: Filing[]) {
   let buys = 0;
   let sells = 0;
   for (const f of filings) {
@@ -366,4 +506,21 @@ function computeWatchlistStats(filings: Filing[]) {
     }
   }
   return { buys, sells };
+}
+
+function computeTimeline(filings: Filing[]) {
+  const dayMap = new Map<string, { buys: number; sells: number }>();
+  for (const f of filings) {
+    const day = f.filing_date?.slice(0, 10);
+    if (!day) continue;
+    const entry = dayMap.get(day) || { buys: 0, sells: 0 };
+    for (const t of f.transactions || []) {
+      if (isBuy(t.transactionCode, t.acquiredDisposed)) entry.buys++;
+      else entry.sells++;
+    }
+    dayMap.set(day, entry);
+  }
+  return Array.from(dayMap.entries())
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
