@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import Tooltip, { TOOLTIPS } from "./Tooltip";
 
 export type Transaction = {
   ownerName: string;
@@ -25,7 +26,7 @@ export type Filing = {
   transactions: Transaction[] | null;
 };
 
-/* ── Helpers ── */
+/* ── Helpers (exported for use in pages) ── */
 
 export function isBuy(code: string | null, ad: string | null): boolean {
   return code === "P" || ad === "A";
@@ -62,8 +63,8 @@ export function fmtFullValue(val: number | null): string {
 export function fmtShares(val: number | null): string {
   if (val == null) return "\u2014";
   return val.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   });
 }
 
@@ -91,6 +92,19 @@ function fmtDate(d: string | null): string {
   }
 }
 
+/** Build a human-readable sentence from a transaction */
+export function transactionSentence(t: Transaction, _ticker?: string): string {
+  const role = t.ownerTitle || "Insider";
+  const name = t.ownerName || "Unknown";
+  const buy = isBuy(t.transactionCode, t.acquiredDisposed);
+  const action = buy ? "bought" : "sold";
+  const sharesStr = t.shares != null ? `${fmtShares(t.shares)} shares` : "shares";
+  const valueStr = t.totalValue != null ? ` worth ${fmtValue(t.totalValue)}` : "";
+  const sentiment = buy ? "(bullish)" : "(bearish)";
+
+  return `${name} (${role}) ${action} ${sharesStr}${valueStr} ${sentiment}`;
+}
+
 /* ── Props ── */
 
 type Props = {
@@ -108,7 +122,7 @@ export default function FilingCard(props: Props) {
 }
 
 /* ══════════════════════════════════════════════
-   Feed variant — dashboard table-row style
+   Feed variant — readable sentence style
    ══════════════════════════════════════════════ */
 
 function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
@@ -122,86 +136,122 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
 
   return (
     <div className="group">
-      {/* Main row */}
-      <div className="flex items-center gap-4 px-5 py-4 bg-surface-container-high hover:bg-surface-container-highest transition-colors rounded-sm">
-        {/* Ticker badge */}
-        <div className="w-10 h-10 flex-shrink-0 bg-surface-container-lowest rounded-sm flex items-center justify-center text-[10px] font-bold text-primary border border-outline-variant/20">
-          {filing.ticker}
-        </div>
+      <div className="flex items-start gap-4 px-5 py-4 bg-surface-container-high hover:bg-surface-container-highest transition-colors rounded-sm">
+        {/* Sentiment indicator */}
+        <div
+          className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${buy ? "bg-tertiary" : "bg-error"}`}
+        />
 
-        {/* Company + insider */}
+        {/* Main content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          {/* Company header */}
+          <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-on-surface text-sm">
+              {filing.ticker}
+            </span>
+            <span className="text-xs text-on-surface-variant">
               {filing.company_name}
             </span>
-            <span className="text-[10px] bg-surface-container-lowest px-1.5 py-0.5 rounded-sm font-black text-on-surface-variant">
-              {filing.form_type}
+            <Tooltip content={TOOLTIPS.form4}>
+              <span className="text-[10px] bg-surface-container-lowest px-1.5 py-0.5 rounded-sm font-bold text-on-surface-variant cursor-help border border-outline-variant/10">
+                {filing.form_type}
+              </span>
+            </Tooltip>
+            <span className="text-[10px] text-on-surface-variant/60 ml-auto tnum flex-shrink-0">
+              {fmtDate(filing.filing_date)}
             </span>
           </div>
+
+          {/* Readable sentence */}
           {t && (
-            <p className="text-xs text-on-surface-variant truncate">
-              {t.ownerName}
-              {t.ownerTitle ? ` \u2022 ${t.ownerTitle}` : ""}
+            <p className="text-sm text-on-surface leading-relaxed">
+              <span className="text-on-surface-variant">{t.ownerName}</span>
+              {t.ownerTitle && (
+                <span className="text-on-surface-variant/60">
+                  {" "}({t.ownerTitle})
+                </span>
+              )}
+              {" "}
+              <span className={`font-bold ${buy ? "text-tertiary" : "text-error"}`}>
+                {buy ? "bought" : "sold"}
+              </span>
+              {" "}
+              {t.shares != null && (
+                <Tooltip content={TOOLTIPS.shares}>
+                  <span className="font-semibold text-on-surface tnum cursor-help underline decoration-dotted decoration-outline-variant/30 underline-offset-2">
+                    {fmtShares(t.shares)} shares
+                  </span>
+                </Tooltip>
+              )}
+              {t.totalValue != null && (
+                <>
+                  {" worth "}
+                  <Tooltip content={TOOLTIPS.value}>
+                    <span
+                      className={`font-bold tnum cursor-help underline decoration-dotted decoration-outline-variant/30 underline-offset-2 ${buy ? "text-tertiary" : "text-error"}`}
+                    >
+                      {fmtValue(t.totalValue)}
+                    </span>
+                  </Tooltip>
+                </>
+              )}
+              {" "}
+              <span
+                className={`text-xs font-medium ${buy ? "text-tertiary/70" : "text-error/70"}`}
+              >
+                {buy ? "(bullish)" : "(bearish)"}
+              </span>
             </p>
           )}
-        </div>
 
-        {/* Action */}
-        {t && (
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded-sm font-bold flex-shrink-0 ${
-              buy ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"
-            }`}
-          >
-            {txnLabel(t.transactionCode, t.acquiredDisposed)}
-          </span>
-        )}
-
-        {/* Shares */}
-        <div className="hidden md:block text-right flex-shrink-0 w-24">
-          <p className="text-xs text-on-surface-variant">Shares</p>
-          <p className="text-sm font-bold tnum text-on-surface">
-            {t ? fmtShares(t.shares) : "\u2014"}
-          </p>
-        </div>
-
-        {/* Value */}
-        <div className="hidden md:block text-right flex-shrink-0 w-28">
-          <p className="text-xs text-on-surface-variant">Value</p>
-          <p
-            className={`text-sm font-bold tnum ${buy ? "text-tertiary" : "text-error"}`}
-          >
-            {t ? fmtValue(t.totalValue) : "\u2014"}
-          </p>
-        </div>
-
-        {/* Date */}
-        <div className="hidden lg:block text-right flex-shrink-0 w-28">
-          <p className="text-xs text-on-surface-variant">Filed</p>
-          <p className="text-xs font-medium tnum text-on-surface">
-            {fmtDate(filing.filing_date)}
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Expand toggle */}
+          {/* Multi-transaction expand */}
           {multi && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-on-surface-variant hover:text-primary transition-colors"
-              title={expanded ? "Collapse" : `${txns.length} transactions`}
+              className="mt-2 flex items-center gap-1 text-xs text-primary font-bold hover:underline"
             >
               <span
-                className={`material-symbols-outlined text-lg transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+                className={`material-symbols-outlined text-sm transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
               >
                 expand_more
               </span>
+              {expanded
+                ? "Show less"
+                : `+${txns.length - 1} more transaction${txns.length > 2 ? "s" : ""}`}
             </button>
           )}
 
-          {/* Watch / Unwatch */}
+          {/* Expanded: all transactions as sentences */}
+          {expanded && multi && (
+            <div className="mt-3 pl-2 border-l-2 border-outline-variant/20 space-y-2">
+              {txns.slice(1).map((tx, i) => {
+                const b = isBuy(tx.transactionCode, tx.acquiredDisposed);
+                return (
+                  <p key={i} className="text-xs text-on-surface-variant leading-relaxed">
+                    <span className="text-on-surface">{tx.ownerName}</span>
+                    {tx.ownerTitle && ` (${tx.ownerTitle})`}
+                    {" "}
+                    <span className={`font-bold ${b ? "text-tertiary" : "text-error"}`}>
+                      {b ? "bought" : "sold"}
+                    </span>
+                    {" "}
+                    {tx.shares != null && (
+                      <span className="tnum">{fmtShares(tx.shares)} shares</span>
+                    )}
+                    {tx.totalValue != null && (
+                      <span className={`font-bold tnum ${b ? "text-tertiary" : "text-error"}`}>
+                        {" "}worth {fmtValue(tx.totalValue)}
+                      </span>
+                    )}
+                  </p>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Watch/Unwatch button */}
+        <div className="flex items-center flex-shrink-0 mt-0.5">
           {user ? (
             isWatched ? (
               <button
@@ -239,78 +289,12 @@ function FeedCard({ filing, onWatch, onUnwatch, watchedIds }: Props) {
           )}
         </div>
       </div>
-
-      {/* Expanded transaction table */}
-      {expanded && multi && (
-        <div className="mx-5 mb-4 bg-surface-container rounded-sm border border-outline-variant/10 overflow-hidden">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-outline-variant/10 text-on-surface-variant">
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Insider
-                </th>
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Action
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Shares
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Price
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Total Value
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {txns.map((tx, i) => {
-                const b = isBuy(tx.transactionCode, tx.acquiredDisposed);
-                return (
-                  <tr
-                    key={i}
-                    className="border-b border-outline-variant/5 last:border-none hover:bg-surface-container-high/50"
-                  >
-                    <td className="py-2.5 px-3 text-on-surface font-medium">
-                      {tx.ownerName}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${b ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"}`}
-                      >
-                        {txnLabel(tx.transactionCode, tx.acquiredDisposed)}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right tnum text-on-surface">
-                      {fmtShares(tx.shares)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tnum text-on-surface">
-                      {fmtPrice(tx.pricePerShare)}
-                    </td>
-                    <td
-                      className={`py-2.5 px-3 text-right tnum font-bold ${b ? "text-tertiary" : "text-error"}`}
-                    >
-                      {fmtFullValue(tx.totalValue)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tnum text-on-surface-variant">
-                      {fmtDate(tx.transactionDate)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }
 
 /* ══════════════════════════════════════════════
-   Watchlist Activity Card — filing event card
+   Watchlist Activity Card — sentence-based
    ══════════════════════════════════════════════ */
 
 function WatchlistActivityCard({ filing, onUnwatch }: Props) {
@@ -331,33 +315,43 @@ function WatchlistActivityCard({ filing, onUnwatch }: Props) {
           <span className="text-sm font-bold text-on-surface">
             {filing.ticker}
           </span>
-          <span className="text-[10px] bg-surface-container-lowest px-1.5 py-0.5 rounded-sm font-black text-on-surface-variant">
-            {filing.form_type}
-          </span>
+          <Tooltip content={TOOLTIPS.form4}>
+            <span className="text-[10px] bg-surface-container-lowest px-1.5 py-0.5 rounded-sm font-bold text-on-surface-variant cursor-help">
+              {filing.form_type}
+            </span>
+          </Tooltip>
         </div>
         <span className="text-xs text-on-surface-variant tnum">
           {fmtDate(filing.filing_date)}
         </span>
       </div>
 
-      {/* Title */}
-      <h4 className="font-bold text-on-surface mb-1 leading-snug">
+      {/* Company name */}
+      <h4 className="font-bold text-on-surface mb-2 leading-snug text-sm">
         {filing.company_name}
       </h4>
 
-      {/* First transaction summary */}
+      {/* Readable sentence */}
       {t && (
         <p className="text-sm text-on-surface-variant leading-relaxed">
           {t.ownerName}
           {t.ownerTitle ? ` (${t.ownerTitle})` : ""}
-          {" \u2014 "}
-          <span
-            className={buy ? "text-tertiary font-bold" : "text-error font-bold"}
-          >
-            {txnLabel(t.transactionCode, t.acquiredDisposed)}
+          {" "}
+          <span className={`font-bold ${buy ? "text-tertiary" : "text-error"}`}>
+            {buy ? "bought" : "sold"}
           </span>
-          {t.shares != null && ` ${fmtShares(t.shares)} shares`}
-          {t.totalValue != null && ` totaling ${fmtValue(t.totalValue)}`}
+          {t.shares != null && (
+            <span className="tnum"> {fmtShares(t.shares)} shares</span>
+          )}
+          {t.totalValue != null && (
+            <span className={`font-bold tnum ${buy ? "text-tertiary" : "text-error"}`}>
+              {" "}worth {fmtValue(t.totalValue)}
+            </span>
+          )}
+          {" "}
+          <span className={`text-xs ${buy ? "text-tertiary/60" : "text-error/60"}`}>
+            {buy ? "(bullish)" : "(bearish)"}
+          </span>
         </p>
       )}
 
@@ -372,71 +366,38 @@ function WatchlistActivityCard({ filing, onUnwatch }: Props) {
           >
             expand_more
           </span>
-          {expanded ? "Collapse" : `View all ${txns.length} transactions`}
+          {expanded ? "Show less" : `+${txns.length - 1} more`}
         </button>
       )}
 
-      {/* Expanded transactions table */}
+      {/* Expanded sentences */}
       {expanded && multi && (
-        <div className="mt-3 bg-surface-container rounded-sm border border-outline-variant/10 overflow-hidden">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-outline-variant/10 text-on-surface-variant">
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Insider
-                </th>
-                <th className="text-left py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Action
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Shares
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Price
-                </th>
-                <th className="text-right py-2 px-3 font-bold uppercase text-[10px] tracking-wider">
-                  Value
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {txns.map((tx, i) => {
-                const b = isBuy(tx.transactionCode, tx.acquiredDisposed);
-                return (
-                  <tr
-                    key={i}
-                    className="border-b border-outline-variant/5 last:border-none"
-                  >
-                    <td className="py-2 px-3 text-on-surface font-medium">
-                      {tx.ownerName}
-                    </td>
-                    <td className="py-2 px-3">
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${b ? "bg-tertiary/15 text-tertiary" : "bg-error/15 text-error"}`}
-                      >
-                        {txnLabel(tx.transactionCode, tx.acquiredDisposed)}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-right tnum text-on-surface">
-                      {fmtShares(tx.shares)}
-                    </td>
-                    <td className="py-2 px-3 text-right tnum text-on-surface">
-                      {fmtPrice(tx.pricePerShare)}
-                    </td>
-                    <td
-                      className={`py-2 px-3 text-right tnum font-bold ${b ? "text-tertiary" : "text-error"}`}
-                    >
-                      {fmtFullValue(tx.totalValue)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="mt-3 pl-3 border-l-2 border-outline-variant/20 space-y-2">
+          {txns.slice(1).map((tx, i) => {
+            const b = isBuy(tx.transactionCode, tx.acquiredDisposed);
+            return (
+              <p key={i} className="text-xs text-on-surface-variant leading-relaxed">
+                {tx.ownerName}
+                {tx.ownerTitle && ` (${tx.ownerTitle})`}
+                {" "}
+                <span className={`font-bold ${b ? "text-tertiary" : "text-error"}`}>
+                  {b ? "bought" : "sold"}
+                </span>
+                {tx.shares != null && (
+                  <span className="tnum"> {fmtShares(tx.shares)} shares</span>
+                )}
+                {tx.totalValue != null && (
+                  <span className={`font-bold tnum ${b ? "text-tertiary" : "text-error"}`}>
+                    {" "}worth {fmtValue(tx.totalValue)}
+                  </span>
+                )}
+              </p>
+            );
+          })}
         </div>
       )}
 
-      {/* Footer actions */}
+      {/* Footer */}
       <div className="mt-4 pt-3 border-t border-outline-variant/10 flex items-center justify-between">
         <div className="flex items-center gap-1 text-xs text-on-surface-variant">
           <span className="material-symbols-outlined text-sm">description</span>
