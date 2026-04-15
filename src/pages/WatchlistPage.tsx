@@ -34,7 +34,7 @@ export default function WatchlistPage() {
   }, [fetchFeed]);
 
   const handleRemove = useCallback(async (companyId: number) => {
-    const res = await fetch("/watchlist", {
+    const res = await fetch("/api/watchlist", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -51,7 +51,7 @@ export default function WatchlistPage() {
     setAddError("");
     setAdding(true);
     try {
-      const res = await fetch("/watchlist/ticker", {
+      const res = await fetch("/api/watchlist/ticker", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

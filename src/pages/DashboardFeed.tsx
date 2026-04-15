@@ -35,7 +35,7 @@ export default function DashboardFeed() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("/watchlist", { credentials: "include" })
+    fetch("/api/watchlist", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.userCompanies) {
@@ -48,7 +48,7 @@ export default function DashboardFeed() {
   }, [user]);
 
   const handleWatch = useCallback(async (companyId: number) => {
-    const res = await fetch("/watchlist", {
+    const res = await fetch("/api/watchlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -58,7 +58,7 @@ export default function DashboardFeed() {
   }, []);
 
   const handleUnwatch = useCallback(async (companyId: number) => {
-    const res = await fetch("/watchlist", {
+    const res = await fetch("/api/watchlist", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

@@ -29,7 +29,7 @@ app.use("/health", healthRoutes);
 app.use("/api", form4Routes);
 app.use("/auth", authRoutes);
 
-app.use("/watchlist", verifyUser, watchlistRoutes);
+app.use("/api/watchlist", verifyUser, watchlistRoutes);
 app.use("/api/feed", feedRoutes);
 
 app.listen(PORT, () => {

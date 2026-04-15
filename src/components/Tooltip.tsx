@@ -27,7 +27,7 @@ export default function Tooltip({ content, children }: Props) {
       {show && (
         <div
           ref={ref}
-          className={`absolute z-50 px-3 py-2 text-xs leading-relaxed text-on-surface bg-surface-container-highest border border-outline-variant/20 rounded-md shadow-lg max-w-[220px] whitespace-normal ${
+          className={`absolute z-50 px-3 py-2 text-xs leading-relaxed text-on-surface bg-surface-container-highest border border-outline-variant/20 rounded-md shadow-lg w-[min(22rem,calc(100vw-2rem))] whitespace-normal break-words ${
             pos === "top"
               ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
               : "top-full mt-2 left-1/2 -translate-x-1/2"

@@ -8,7 +8,6 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:3001",
       "/auth": "http://localhost:3001",
-      "/watchlist": "http://localhost:3001",
     },
   },
 });

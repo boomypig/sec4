@@ -77,6 +77,15 @@ export async function login(req: Request, res: Response) {
   return res.status(200).json({ message: "Logged in successfully" });
 }
 
+export async function logout(_req: Request, res: Response) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  return res.status(200).json({ message: "Logged out" });
+}
+
 export async function getMe(req: Request, res: Response) {
   try {
     const result = await pool.query(
