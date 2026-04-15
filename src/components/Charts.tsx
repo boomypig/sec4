@@ -113,7 +113,7 @@ export function ActivitySparkline({ data }: ActivitySparklineProps) {
     return (
       <div className="bg-surface-container rounded-sm p-5">
         <h3 className="text-[10px] uppercase tracking-[0.15em] font-bold text-on-surface-variant mb-4">
-          Activity Over Time
+          Activity Over Time · Last 7 Days
         </h3>
         <p className="text-xs text-on-surface-variant text-center py-6">
           Not enough data yet
@@ -133,7 +133,7 @@ export function ActivitySparkline({ data }: ActivitySparklineProps) {
   return (
     <div className="bg-surface-container rounded-sm p-5">
       <h3 className="text-[10px] uppercase tracking-[0.15em] font-bold text-on-surface-variant mb-4">
-        Activity Over Time
+        Activity Over Time · Last 7 Days
       </h3>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-28">
         {data.map((d, i) => {
@@ -166,18 +166,16 @@ export function ActivitySparkline({ data }: ActivitySparklineProps) {
                 fill="#ffb4ab"
                 opacity="0.8"
               />
-              {/* Date label (first, middle, last) */}
-              {(i === 0 || i === data.length - 1 || i === Math.floor(data.length / 2)) && (
-                <text
-                  x={Math.max(x, padding.left) + barW / 2}
-                  y={h - 2}
-                  textAnchor="middle"
-                  fill="#958ea0"
-                  fontSize="7"
-                >
-                  {formatShortDate(d.date)}
-                </text>
-              )}
+              {/* Date label */}
+              <text
+                x={Math.max(x, padding.left) + barW / 2}
+                y={h - 2}
+                textAnchor="middle"
+                fill="#958ea0"
+                fontSize="7"
+              >
+                {formatShortDate(d.date)}
+              </text>
             </g>
           );
         })}

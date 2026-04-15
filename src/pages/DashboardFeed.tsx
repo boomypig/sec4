@@ -144,6 +144,9 @@ export default function DashboardFeed() {
       {/* Main content (only when we have data) */}
       {!loading && !error && filings.length > 0 && (
         <>
+          {/* 0. How it works — shown above the stats grid for logged-out users */}
+          {!user && <HowItWorks isLoggedIn={false} />}
+
           {/* 1. Insight Summary */}
           <InsightSummary
             buys={stats.buys}
@@ -214,8 +217,6 @@ export default function DashboardFeed() {
             ))}
           </section>
 
-          {/* 5. How it works (for logged-out or new users) */}
-          {!user && <HowItWorks isLoggedIn={false} />}
         </>
       )}
     </main>
@@ -376,22 +377,32 @@ function computeStats(filings: Filing[]) {
 /* ── Activity timeline ── */
 
 function computeActivityTimeline(filings: Filing[]) {
+  // Always produce the last 7 days ending today, zero-filled so gaps show.
+  const DAYS = 7;
   const dayMap = new Map<string, { buys: number; sells: number }>();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    dayMap.set(d.toISOString().slice(0, 10), { buys: 0, sells: 0 });
+  }
 
   for (const f of filings) {
     const day = f.filing_date?.slice(0, 10);
-    if (!day) continue;
-    const entry = dayMap.get(day) || { buys: 0, sells: 0 };
+    if (!day || !dayMap.has(day)) continue;
+    const entry = dayMap.get(day)!;
     for (const t of f.transactions || []) {
       if (isBuy(t.transactionCode, t.acquiredDisposed)) entry.buys++;
       else entry.sells++;
     }
-    dayMap.set(day, entry);
   }
 
-  return Array.from(dayMap.entries())
-    .map(([date, counts]) => ({ date, ...counts }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  return Array.from(dayMap.entries()).map(([date, counts]) => ({
+    date,
+    ...counts,
+  }));
 }
 
 /* ── Filtering ── */

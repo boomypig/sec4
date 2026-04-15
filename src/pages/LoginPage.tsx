@@ -47,10 +47,10 @@ export default function LoginPage() {
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tighter text-on-surface uppercase">
-            Sovereign Analyst
+            Insider Track
           </h1>
           <p className="text-on-surface-variant text-sm tracking-tight mt-2">
-            Institutional Intelligence Terminal
+            Sign in to your account
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
                 className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
                 htmlFor="email"
               >
-                Network Identifier
+                Email
               </label>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg group-focus-within:text-primary transition-colors">
@@ -78,7 +78,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-surface-container-highest border-none focus:ring-1 focus:ring-primary/50 rounded-sm py-4 pl-10 pr-4 text-on-surface placeholder:text-outline/50 transition-all"
-                  placeholder="analyst@sovereign.io"
+                  placeholder="you@example.com"
                   required
                   autoFocus
                 />
@@ -91,7 +91,7 @@ export default function LoginPage() {
                 className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
                 htmlFor="password"
               >
-                Authentication Key
+                Password
               </label>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg group-focus-within:text-primary transition-colors">
@@ -127,7 +127,7 @@ export default function LoginPage() {
               disabled={submitting}
               className="w-full metallic-gradient text-on-primary-fixed font-bold py-4 rounded-sm shadow-lg hover:shadow-primary/20 transition-all active:scale-[0.98] uppercase tracking-widest text-sm flex items-center justify-center space-x-2 disabled:opacity-50"
             >
-              <span>{submitting ? "Authenticating..." : "Initialize Session"}</span>
+              <span>{submitting ? "Signing in..." : "Sign In"}</span>
               {!submitting && (
                 <span className="material-symbols-outlined text-lg">
                   arrow_forward
@@ -139,12 +139,12 @@ export default function LoginPage() {
           {/* Register link */}
           <div className="mt-8 pt-8 border-t border-outline-variant/[.15] flex flex-col items-center">
             <p className="text-xs text-on-surface-variant">
-              New operative?{" "}
+              Don't have an account?{" "}
               <Link
                 to="/register"
                 className="text-primary font-bold hover:underline"
               >
-                Request Terminal Access
+                Register
               </Link>
             </p>
           </div>
@@ -156,7 +156,7 @@ export default function LoginPage() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary" />
           </span>
-          <span>Secure Node Active</span>
+          <span>Secure Connection</span>
         </div>
       </div>
     </div>

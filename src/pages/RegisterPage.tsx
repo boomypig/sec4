@@ -45,10 +45,10 @@ export default function RegisterPage() {
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tighter text-on-surface uppercase">
-            Terminal Access
+            Create Account
           </h1>
           <p className="text-on-surface-variant text-sm tracking-tight mt-2">
-            Register for Institutional Intelligence
+            Register for Insider Track
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export default function RegisterPage() {
                 className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
                 htmlFor="reg-email"
               >
-                Network Identifier
+                Email
               </label>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg group-focus-within:text-primary transition-colors">
@@ -73,7 +73,7 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-surface-container-highest border-none focus:ring-1 focus:ring-primary/50 rounded-sm py-4 pl-10 pr-4 text-on-surface placeholder:text-outline/50 transition-all"
-                  placeholder="analyst@sovereign.io"
+                  placeholder="you@example.com"
                   required
                   autoFocus
                 />
@@ -85,7 +85,7 @@ export default function RegisterPage() {
                 className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
                 htmlFor="reg-password"
               >
-                Authentication Key
+                Password
               </label>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg group-focus-within:text-primary transition-colors">
@@ -121,7 +121,7 @@ export default function RegisterPage() {
               className="w-full metallic-gradient text-on-primary-fixed font-bold py-4 rounded-sm shadow-lg hover:shadow-primary/20 transition-all active:scale-[0.98] uppercase tracking-widest text-sm flex items-center justify-center space-x-2 disabled:opacity-50"
             >
               <span>
-                {submitting ? "Creating Access..." : "Request Access"}
+                {submitting ? "Creating account..." : "Create Account"}
               </span>
               {!submitting && (
                 <span className="material-symbols-outlined text-lg">
@@ -133,12 +133,12 @@ export default function RegisterPage() {
 
           <div className="mt-8 pt-8 border-t border-outline-variant/[.15] flex flex-col items-center">
             <p className="text-xs text-on-surface-variant">
-              Already verified?{" "}
+              Already have an account?{" "}
               <Link
                 to="/login"
                 className="text-primary font-bold hover:underline"
               >
-                Initialize Session
+                Sign In
               </Link>
             </p>
           </div>

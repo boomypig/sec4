@@ -18,10 +18,10 @@ export default function Navbar() {
           </span>
           <div className="leading-none">
             <span className="text-sm font-extrabold tracking-tighter text-primary uppercase">
-              Ametrine
+              Insider Track
             </span>
             <span className="text-[8px] block text-on-surface-variant uppercase tracking-[0.15em] -mt-0.5">
-              Intelligence
+              SEC Form 4 Feed
             </span>
           </div>
         </Link>
