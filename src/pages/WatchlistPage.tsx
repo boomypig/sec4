@@ -8,7 +8,7 @@ import {
 import type { Filing } from "../components/FilingCard";
 import { BuySellBar, ActivitySparkline } from "../components/Charts";
 import Tooltip, { TOOLTIPS } from "../components/Tooltip";
-
+import { apiUrl } from "../lib/api";
 export default function WatchlistPage() {
   const [filings, setFilings] = useState<Filing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function WatchlistPage() {
   }, [fetchFeed]);
 
   const handleRemove = useCallback(async (companyId: number) => {
-    const res = await fetch("/api/watchlist", {
+    const res = await fetch(apiUrl("/api/watchlist"), {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -51,7 +51,7 @@ export default function WatchlistPage() {
     setAddError("");
     setAdding(true);
     try {
-      const res = await fetch("/api/watchlist/ticker", {
+      const res = await fetch(apiUrl("/api/watchlist/ticker"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

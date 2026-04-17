@@ -8,7 +8,7 @@ import FilterBar from "../components/FilterBar";
 import type { FilterState } from "../components/FilterBar";
 import { BuySellBar, ActivitySparkline } from "../components/Charts";
 import HowItWorks from "../components/HowItWorks";
-
+import { apiUrl } from "../lib/api";
 export default function DashboardFeed() {
   const { user } = useAuth();
 
@@ -25,7 +25,7 @@ export default function DashboardFeed() {
   const PAGE_SIZE = 10; // company groups per page
 
   useEffect(() => {
-    fetch("/api/feed/recent")
+    fetch(apiUrl("/api/feed/recent"))
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load feed");
         return r.json();
@@ -37,7 +37,7 @@ export default function DashboardFeed() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("/api/watchlist", { credentials: "include" })
+    fetch(apiUrl("/api/watchlist"), { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.userCompanies) {
@@ -50,7 +50,7 @@ export default function DashboardFeed() {
   }, [user]);
 
   const handleWatch = useCallback(async (companyId: number) => {
-    const res = await fetch("/api/watchlist", {
+    const res = await fetch(apiUrl("/api/watchlist"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

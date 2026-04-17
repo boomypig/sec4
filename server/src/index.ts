@@ -15,9 +15,14 @@ import { startScheduler } from "./services/scheduler.service.js";
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
+const allowedOrigin =
+  process.env.NODE_ENV === "production"
+    ? process.env.FRONTEND_URL
+    : "http://localhost:5173";
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigin,
     credentials: true,
   }),
 );

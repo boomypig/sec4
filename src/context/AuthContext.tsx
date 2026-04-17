@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
-
+import { apiUrl } from "../lib/api";
 type User = {
   userId: string;
   email: string;
@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check auth on mount via GET /auth/me (reads HttpOnly cookie)
   useEffect(() => {
-    fetch("/auth/me", { credentials: "include" })
+    fetch(apiUrl("/auth/me"), { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.userId) setUser(data);
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/auth/login", {
+    const res = await fetch(apiUrl("/auth/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -43,13 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(body.error || "Login failed");
     }
     // Fetch user info after successful login
-    const meRes = await fetch("/auth/me", { credentials: "include" });
+    const meRes = await fetch(apiUrl("/auth/me"), { credentials: "include" });
     const me = await meRes.json();
     setUser(me);
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/auth/register", {
+    const res = await fetch(apiUrl("/auth/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     // Cookie is HttpOnly, so the server must clear it.
     try {
-      await fetch("/auth/logout", {
+      await fetch(apiUrl("/auth/logout"), {
         method: "POST",
         credentials: "include",
       });
