@@ -3,7 +3,7 @@ import { pool } from "../db/pool.js";
 
 export async function getRecentFeed(req: Request, res: Response) {
   try {
-    const limit = Math.min(Number(req.query.limit) || 50, 100);
+    const limit = Math.min(Number(req.query.limit) || 500, 500);
 
     const { rows } = await pool.query(
       `SELECT
@@ -41,7 +41,7 @@ export async function getRecentFeed(req: Request, res: Response) {
 export async function getWatchlistFeed(req: Request, res: Response) {
   try {
     const userId = req.userId;
-    const limit = Math.min(Number(req.query.limit) || 50, 100);
+    const limit = Math.min(Number(req.query.limit) || 500, 500);
 
     const { rows } = await pool.query(
       `SELECT

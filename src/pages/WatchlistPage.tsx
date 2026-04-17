@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import FilingCard from "../components/FilingCard";
 import {
   isBuy,
@@ -74,6 +74,19 @@ export default function WatchlistPage() {
   const companyStats = useMemo(() => computeCompanyStats(filings), [filings]);
   const globalStats = useMemo(() => computeGlobalStats(filings), [filings]);
   const activityData = useMemo(() => computeTimeline(filings), [filings]);
+
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(1);
+  const activitySectionRef = useRef<HTMLElement>(null);
+
+  // Reset page when filings reload
+  useEffect(() => { setPage(1); }, [filings]);
+
+  const totalPages = Math.ceil(filings.length / PAGE_SIZE);
+  const pagedFilings = useMemo(
+    () => filings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filings, page],
+  );
 
   return (
     <main className="p-6 max-w-7xl mx-auto w-full space-y-6">
@@ -214,16 +227,26 @@ export default function WatchlistPage() {
             </section>
 
             {/* Recent Activity Feed */}
-            <section>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-sm">
-                  bolt
+            <section ref={activitySectionRef}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-sm">
+                    bolt
+                  </span>
+                  Recent Activity
+                  {totalPages > 1 && (
+                    <span className="normal-case tracking-normal font-normal text-outline/60">
+                      — page {page} of {totalPages}
+                    </span>
+                  )}
+                </h2>
+                <span className="text-[10px] text-on-surface-variant tabular-nums">
+                  {filings.length} filing{filings.length !== 1 ? "s" : ""}
                 </span>
-                Recent Activity
-              </h2>
+              </div>
 
               <div className="space-y-1 bg-surface-container-high/30 rounded-sm overflow-hidden border border-outline-variant/5">
-                {filings.slice(0, 15).map((f) => (
+                {pagedFilings.map((f) => (
                   <FilingCard
                     key={f.filing_id}
                     filing={f}
@@ -236,10 +259,58 @@ export default function WatchlistPage() {
                 ))}
               </div>
 
-              {filings.length > 15 && (
-                <p className="text-xs text-on-surface-variant text-center mt-3">
-                  Showing 15 of {filings.length} filings
-                </p>
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-[10px] text-on-surface-variant tabular-nums">
+                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filings.length)} of {filings.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <WlPaginationBtn
+                      icon="first_page"
+                      label="First page"
+                      disabled={page === 1}
+                      onClick={() => { setPage(1); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                    />
+                    <WlPaginationBtn
+                      icon="chevron_left"
+                      label="Previous page"
+                      disabled={page === 1}
+                      onClick={() => { setPage((p) => p - 1); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                    />
+                    <div className="flex items-center gap-0.5">
+                      {buildWlPageWindow(page, totalPages).map((item, i) =>
+                        item === "…" ? (
+                          <span key={`e-${i}`} className="px-1 text-xs text-outline/50">…</span>
+                        ) : (
+                          <button
+                            key={item}
+                            onClick={() => { setPage(item as number); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                            className={`min-w-[28px] h-7 rounded-sm text-xs font-bold transition-all ${
+                              item === page
+                                ? "bg-primary text-on-primary"
+                                : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                            }`}
+                          >
+                            {item}
+                          </button>
+                        )
+                      )}
+                    </div>
+                    <WlPaginationBtn
+                      icon="chevron_right"
+                      label="Next page"
+                      disabled={page === totalPages}
+                      onClick={() => { setPage((p) => p + 1); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                    />
+                    <WlPaginationBtn
+                      icon="last_page"
+                      label="Last page"
+                      disabled={page === totalPages}
+                      onClick={() => { setPage(totalPages); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                    />
+                  </div>
+                </div>
               )}
             </section>
           </div>
@@ -335,18 +406,6 @@ export default function WatchlistPage() {
             <BuySellBar buys={globalStats.buys} sells={globalStats.sells} />
             <ActivitySparkline data={activityData} />
 
-            {/* Feed status */}
-            <div className="bg-surface-container-high rounded-sm p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary" />
-                </span>
-                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Feed Connected
-                </span>
-              </div>
-            </div>
           </aside>
         </div>
       )}
@@ -446,6 +505,48 @@ function CompanySummaryCard({
       )}
     </div>
   );
+}
+
+/* ── Pagination helpers ── */
+
+function WlPaginationBtn({
+  icon,
+  label,
+  disabled,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="w-7 h-7 flex items-center justify-center rounded-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+    >
+      <span className="material-symbols-outlined text-base">{icon}</span>
+    </button>
+  );
+}
+
+function buildWlPageWindow(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = new Set<number>();
+  pages.add(1);
+  pages.add(total);
+  for (let i = Math.max(1, current - 1); i <= Math.min(total, current + 1); i++) {
+    pages.add(i);
+  }
+  const sorted = Array.from(pages).sort((a, b) => a - b);
+  const result: (number | "…")[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push("…");
+    result.push(sorted[i]);
+  }
+  return result;
 }
 
 /* ── Helpers ── */

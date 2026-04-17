@@ -21,6 +21,8 @@ export default function DashboardFeed() {
     minValue: 0,
     timeRange: "all",
   });
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10; // company groups per page
 
   useEffect(() => {
     fetch("/api/feed/recent")
@@ -87,6 +89,25 @@ export default function DashboardFeed() {
   // Group filtered filings by company
   const grouped = useMemo(() => groupByCompany(filtered), [filtered]);
 
+  // Reset to page 1 whenever filters or data change
+  useEffect(() => { setPage(1); }, [filters, filings]);
+
+  const totalPages = Math.ceil(grouped.length / PAGE_SIZE);
+  const pagedGroups = useMemo(
+    () => grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [grouped, page, PAGE_SIZE],
+  );
+
+  // Range of filing dates on the current page (for display label)
+  const pageFilingRange = useMemo(() => {
+    const allDates = pagedGroups
+      .flatMap((g) => g.filings.map((f) => f.filing_date?.slice(0, 10)))
+      .filter(Boolean) as string[];
+    if (allDates.length === 0) return null;
+    allDates.sort();
+    return { from: allDates[0], to: allDates[allDates.length - 1] };
+  }, [pagedGroups]);
+
   return (
     <main className="p-6 max-w-7xl mx-auto w-full space-y-6">
       {/* Header */}
@@ -100,15 +121,6 @@ export default function DashboardFeed() {
             Form 4 filings.
           </p>
         </div>
-        {filings.length > 0 && (
-          <span className="inline-flex items-center gap-2 bg-surface-container-high px-3 py-1.5 rounded-sm text-[10px] font-bold text-tertiary border border-tertiary/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary" />
-            </span>
-            {filings.length} FILINGS LOADED
-          </span>
-        )}
       </section>
 
       {/* Loading / Error */}
@@ -168,6 +180,7 @@ export default function DashboardFeed() {
 
           {/* 4. Grouped filings */}
           <section className="space-y-4">
+            {/* Section header */}
             <div className="flex items-center justify-between">
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-sm">
@@ -176,6 +189,11 @@ export default function DashboardFeed() {
                 {filtered.length === filings.length
                   ? "All Insider Activity"
                   : `${filtered.length} of ${filings.length} filings`}
+                {totalPages > 1 && (
+                  <span className="normal-case tracking-normal font-normal text-outline/60">
+                    — page {page} of {totalPages}
+                  </span>
+                )}
               </h2>
               {filters.direction !== "all" ||
               filters.minValue > 0 ||
@@ -206,7 +224,8 @@ export default function DashboardFeed() {
               </div>
             )}
 
-            {grouped.map((group) => (
+            {/* Current page groups */}
+            {pagedGroups.map((group) => (
               <CompanyGroup
                 key={group.companyId}
                 group={group}
@@ -215,6 +234,75 @@ export default function DashboardFeed() {
                 watchedIds={watchedIds}
               />
             ))}
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-2">
+                {/* Date range hint */}
+                <span className="text-[10px] text-on-surface-variant tabular-nums">
+                  {pageFilingRange
+                    ? pageFilingRange.from === pageFilingRange.to
+                      ? fmtShortDate(pageFilingRange.from)
+                      : `${fmtShortDate(pageFilingRange.from)} – ${fmtShortDate(pageFilingRange.to)}`
+                    : ""}
+                </span>
+
+                <div className="flex items-center gap-1">
+                  {/* First */}
+                  <PaginationBtn
+                    icon="first_page"
+                    label="First page"
+                    disabled={page === 1}
+                    onClick={() => { setPage(1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  />
+                  {/* Prev */}
+                  <PaginationBtn
+                    icon="chevron_left"
+                    label="Previous page"
+                    disabled={page === 1}
+                    onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  />
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-0.5">
+                    {buildPageWindow(page, totalPages).map((item, i) =>
+                      item === "…" ? (
+                        <span key={`ellipsis-${i}`} className="px-1 text-xs text-outline/50">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          onClick={() => { setPage(item as number); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                          className={`min-w-[28px] h-7 rounded-sm text-xs font-bold transition-all ${
+                            item === page
+                              ? "bg-primary text-on-primary"
+                              : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  {/* Next */}
+                  <PaginationBtn
+                    icon="chevron_right"
+                    label="Next page"
+                    disabled={page === totalPages}
+                    onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  />
+                  {/* Last */}
+                  <PaginationBtn
+                    icon="last_page"
+                    label="Last page"
+                    disabled={page === totalPages}
+                    onClick={() => { setPage(totalPages); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
         </>
@@ -330,6 +418,61 @@ function CompanyGroup({
       )}
     </div>
   );
+}
+
+/* ── Pagination helpers ── */
+
+function PaginationBtn({
+  icon,
+  label,
+  disabled,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="w-7 h-7 flex items-center justify-center rounded-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+    >
+      <span className="material-symbols-outlined text-base">{icon}</span>
+    </button>
+  );
+}
+
+/**
+ * Build a compact page-number window:
+ * always show first, last, current ±1, with "…" ellipsis gaps.
+ */
+function buildPageWindow(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = new Set<number>();
+  pages.add(1);
+  pages.add(total);
+  for (let i = Math.max(1, current - 1); i <= Math.min(total, current + 1); i++) {
+    pages.add(i);
+  }
+  const sorted = Array.from(pages).sort((a, b) => a - b);
+  const result: (number | "…")[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push("…");
+    result.push(sorted[i]);
+  }
+  return result;
+}
+
+function fmtShortDate(d: string): string {
+  try {
+    const date = new Date(d + "T00:00:00");
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return d;
+  }
 }
 
 /* ── Stats computation ── */
