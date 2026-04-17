@@ -377,7 +377,10 @@ function computeStats(filings: Filing[]) {
 /* ── Activity timeline ── */
 
 function computeActivityTimeline(filings: Filing[]) {
-  // Always produce the last 7 days ending today, zero-filled so gaps show.
+  // Always produce the last 7 days ending today, zero-filled so gaps still
+  // render. Uses LOCAL date strings (YYYY-MM-DD) — using toISOString() here
+  // would shift buckets by one day in any timezone west of UTC, hiding
+  // filings on April 13 / 14 / etc.
   const DAYS = 7;
   const dayMap = new Map<string, { buys: number; sells: number }>();
 
@@ -386,7 +389,7 @@ function computeActivityTimeline(filings: Filing[]) {
   for (let i = DAYS - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    dayMap.set(d.toISOString().slice(0, 10), { buys: 0, sells: 0 });
+    dayMap.set(toLocalDateKey(d), { buys: 0, sells: 0 });
   }
 
   for (const f of filings) {
@@ -403,6 +406,13 @@ function computeActivityTimeline(filings: Filing[]) {
     date,
     ...counts,
   }));
+}
+
+function toLocalDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 /* ── Filtering ── */
