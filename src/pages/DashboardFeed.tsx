@@ -60,7 +60,7 @@ export default function DashboardFeed() {
   }, []);
 
   const handleUnwatch = useCallback(async (companyId: number) => {
-    const res = await fetch("/api/watchlist", {
+    const res = await fetch(apiUrl("/api/watchlist"), {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

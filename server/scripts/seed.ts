@@ -4,7 +4,7 @@
 // Download from: https://www.sec.gov/files/company_tickers.json
 
 import { pool } from "../src/db/pool.js";
-import data from "./company_tickers.json" assert { type: "json" };
+import data from "./company_tickers.json" with { type: "json" };
 
 type CompanyEntry = {
   cik_str: number;

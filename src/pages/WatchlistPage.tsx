@@ -19,7 +19,7 @@ export default function WatchlistPage() {
   const [adding, setAdding] = useState(false);
 
   const fetchFeed = useCallback(() => {
-    fetch("/api/feed/watchlist", { credentials: "include" })
+    fetch(apiUrl("/api/feed/watchlist"), { credentials: "include" })
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load watchlist feed");
         return r.json();
