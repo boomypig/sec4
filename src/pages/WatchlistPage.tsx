@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import FilingCard from "../components/FilingCard";
 import {
   isBuy,
@@ -76,11 +77,24 @@ export default function WatchlistPage() {
   const activityData = useMemo(() => computeTimeline(filings), [filings]);
 
   const PAGE_SIZE = 15;
-  const [page, setPage] = useState(1);
   const activitySectionRef = useRef<HTMLElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") || "1"));
 
-  // Reset page when filings reload
-  useEffect(() => { setPage(1); }, [filings]);
+  function goToPage(n: number) {
+    setSearchParams(
+      (prev) => { const next = new URLSearchParams(prev); next.set("page", String(n)); return next; },
+    );
+    activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Reset to page 1 when filings reload (replace so back doesn't return to stale page)
+  useEffect(() => {
+    setSearchParams(
+      (prev) => { const next = new URLSearchParams(prev); next.set("page", "1"); return next; },
+      { replace: true },
+    );
+  }, [filings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalPages = Math.ceil(filings.length / PAGE_SIZE);
   const pagedFilings = useMemo(
@@ -270,13 +284,13 @@ export default function WatchlistPage() {
                       icon="first_page"
                       label="First page"
                       disabled={page === 1}
-                      onClick={() => { setPage(1); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                      onClick={() => goToPage(1)}
                     />
                     <WlPaginationBtn
                       icon="chevron_left"
                       label="Previous page"
                       disabled={page === 1}
-                      onClick={() => { setPage((p) => p - 1); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                      onClick={() => goToPage(page - 1)}
                     />
                     <div className="flex items-center gap-0.5">
                       {buildWlPageWindow(page, totalPages).map((item, i) =>
@@ -285,7 +299,7 @@ export default function WatchlistPage() {
                         ) : (
                           <button
                             key={item}
-                            onClick={() => { setPage(item as number); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                            onClick={() => goToPage(item as number)}
                             className={`min-w-[28px] h-7 rounded-sm text-xs font-bold transition-all ${
                               item === page
                                 ? "bg-primary text-on-primary"
@@ -301,13 +315,13 @@ export default function WatchlistPage() {
                       icon="chevron_right"
                       label="Next page"
                       disabled={page === totalPages}
-                      onClick={() => { setPage((p) => p + 1); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                      onClick={() => goToPage(page + 1)}
                     />
                     <WlPaginationBtn
                       icon="last_page"
                       label="Last page"
                       disabled={page === totalPages}
-                      onClick={() => { setPage(totalPages); activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                      onClick={() => goToPage(totalPages)}
                     />
                   </div>
                 </div>

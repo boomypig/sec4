@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import FilingCard from "../components/FilingCard";
 import { isBuy } from "../components/FilingCard";
@@ -21,8 +22,16 @@ export default function DashboardFeed() {
     minValue: 0,
     timeRange: "all",
   });
-  const [page, setPage] = useState(1);
   const PAGE_SIZE = 10; // company groups per page
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") || "1"));
+
+  function goToPage(n: number) {
+    setSearchParams(
+      (prev) => { const next = new URLSearchParams(prev); next.set("page", String(n)); return next; },
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   useEffect(() => {
     fetch(apiUrl("/api/feed/recent"))
@@ -89,8 +98,14 @@ export default function DashboardFeed() {
   // Group filtered filings by company
   const grouped = useMemo(() => groupByCompany(filtered), [filtered]);
 
-  // Reset to page 1 whenever filters or data change
-  useEffect(() => { setPage(1); }, [filters, filings]);
+  // Reset to page 1 whenever filters or data change (replace so back button
+  // doesn't land on a stale filter page)
+  useEffect(() => {
+    setSearchParams(
+      (prev) => { const next = new URLSearchParams(prev); next.set("page", "1"); return next; },
+      { replace: true },
+    );
+  }, [filters, filings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalPages = Math.ceil(grouped.length / PAGE_SIZE);
   const pagedGroups = useMemo(
@@ -253,14 +268,14 @@ export default function DashboardFeed() {
                     icon="first_page"
                     label="First page"
                     disabled={page === 1}
-                    onClick={() => { setPage(1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => goToPage(1)}
                   />
                   {/* Prev */}
                   <PaginationBtn
                     icon="chevron_left"
                     label="Previous page"
                     disabled={page === 1}
-                    onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => goToPage(page - 1)}
                   />
 
                   {/* Page numbers */}
@@ -273,7 +288,7 @@ export default function DashboardFeed() {
                       ) : (
                         <button
                           key={item}
-                          onClick={() => { setPage(item as number); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                          onClick={() => goToPage(item as number)}
                           className={`min-w-[28px] h-7 rounded-sm text-xs font-bold transition-all ${
                             item === page
                               ? "bg-primary text-on-primary"
@@ -291,14 +306,14 @@ export default function DashboardFeed() {
                     icon="chevron_right"
                     label="Next page"
                     disabled={page === totalPages}
-                    onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => goToPage(page + 1)}
                   />
                   {/* Last */}
                   <PaginationBtn
                     icon="last_page"
                     label="Last page"
                     disabled={page === totalPages}
-                    onClick={() => { setPage(totalPages); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => goToPage(totalPages)}
                   />
                 </div>
               </div>
