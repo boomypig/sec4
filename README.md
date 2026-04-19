@@ -1,23 +1,28 @@
-# Form 4 Tracker
+# Insider Track
 
 > SEC Insider Trading Dashboard
 
-A full-stack web app that aggregates SEC Form 4 insider trading filings into a clean, personalized, real-time dashboard. When corporate insiders buy or sell their own company's stock they must file a Form 4 with the SEC. This app pulls that public data from EDGAR, stores it in PostgreSQL, and surfaces it through a modern React dashboard with watchlist management.
+A full-stack web app that aggregates SEC Form 4 insider trading filings into a clean, personalized, real-time dashboard. When corporate insiders buy or sell their own company's stock they must file a Form 4 with the SEC. This app pulls that public data from EDGAR, stores it in PostgreSQL, and surfaces it through a modern React dashboard with watchlist management, sentiment charts, and paginated filing feeds.
 
 **Author:** Bryan Lopez Rosales
+
+**Live:** [https://sec4-client.onrender.com](https://sec4-client.onrender.com)
 
 ---
 
 ## Tech Stack
 
-| Layer       | Technology                                 |
-| ----------- | ------------------------------------------ |
-| Frontend    | React + TypeScript + Vite (port 5173)      |
-| Backend     | Node.js + Express + TypeScript (port 3001) |
-| Database    | PostgreSQL (db: sec4)                      |
-| Auth        | bcrypt + JWT in HttpOnly cookies           |
-| Scheduler   | node-cron (hourly EDGAR sync)              |
-| XML Parsing | fast-xml-parser                            |
+| Layer        | Technology                                              |
+| ------------ | ------------------------------------------------------- |
+| Frontend     | React + TypeScript + Vite (port 5173)                   |
+| Styling      | Tailwind CSS + Material Symbols (Google Fonts)          |
+| Routing      | React Router v6 (`useSearchParams` for pagination)      |
+| Backend      | Node.js + Express + TypeScript (port 3001)              |
+| Database     | PostgreSQL (db: sec4)                                   |
+| Auth         | bcrypt + JWT in HttpOnly cookies                        |
+| Scheduler    | node-cron (hourly EDGAR sync)                           |
+| XML Parsing  | fast-xml-parser                                         |
+| Deployment   | Render (static site + web service + managed PostgreSQL) |
 
 ---
 
@@ -25,23 +30,27 @@ A full-stack web app that aggregates SEC Form 4 insider trading filings into a c
 
 ```
 sec4/
+  public/
+    _redirects                   # SPA catch-all: /* /index.html 200 (Render)
   server/                        # Express backend
     sql/
       001_init.sql               # DB schema
     src/
       controllers/
-        auth.controller.ts       # register, login, getMe
+        auth.controller.ts       # register, login, logout, getMe
+        feed.controller.ts       # recent feed + watchlist feed
         form4.controller.ts      # EDGAR API endpoints
-        watchlist.controller.ts  # watchlist CRUD
+        watchlist.controller.ts  # watchlist CRUD + add-by-ticker
       db/
         pool.ts                  # PostgreSQL connection pool
       middleware/
         auth.middleware.ts       # JWT verification
       routes/
         auth.routes.ts           # /auth/*
+        feed.routes.ts           # /api/feed/*
         form4.routes.ts          # /api/*
         health.routes.ts         # /health
-        watchlist.routes.ts      # /watchlist/*
+        watchlist.routes.ts      # /api/watchlist/*
       services/
         sec.service.ts           # EDGAR fetch + XML parse
         filing.service.ts        # getOrFetchFiling — dedup + store
@@ -50,10 +59,49 @@ sec4/
         sleep.ts                 # shared rate limit utility
       index.ts                   # Express app entry point
   src/                           # React frontend
+    components/
+      Charts.tsx                 # BuySellBar + ActivitySparkline (pure SVG)
+      FilingCard.tsx             # Feed card + Watchlist card + info collapsible
+      FilterBar.tsx              # Direction / min-value / time-range filters
+      HowItWorks.tsx             # Onboarding explainer shown to logged-out users
+      InsightSummary.tsx         # Stats grid: buys, sells, values, top companies
+      Navbar.tsx                 # Top nav with auth state
+      ProtectedRoute.tsx         # Redirects to /login if unauthenticated
+      Tooltip.tsx                # Hover tooltip + pre-built TOOLTIPS constants
+    context/
+      AuthContext.tsx            # Auth state, login/logout/register helpers
+    lib/
+      api.ts                     # apiUrl() — prepends VITE_API_URL in production
     pages/
+      DashboardFeed.tsx          # Public feed: all filings, filters, pagination
+      Form4Page.tsx              # Single filing detail view
+      LoginPage.tsx              # Sign-in form
+      RegisterPage.tsx           # Account creation form
+      WatchlistPage.tsx          # Protected: personal company feed + pagination
     App.tsx
     main.tsx
 ```
+
+---
+
+## Environment Variables
+
+### Backend (set in Render dashboard or `.env`)
+
+| Variable       | Description                                                      |
+| -------------- | ---------------------------------------------------------------- |
+| `DATABASE_URL` | PostgreSQL connection string (Render external URL)               |
+| `JWT_SECRET`   | Long random hex string used to sign JWTs                         |
+| `USER_AGENT`   | Value for `User-Agent` header on EDGAR requests                  |
+| `NODE_ENV`     | `production` enables secure cookies and tightens CORS            |
+| `FRONTEND_URL` | Allowed CORS origin in production (e.g. `https://…onrender.com`) |
+| `PORT`         | HTTP port — defaults to `3001`                                   |
+
+### Frontend (Vite build-time)
+
+| Variable        | Description                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `VITE_API_URL`  | Backend base URL in production (e.g. `https://sec4-server.onrender.com`). Empty string in local dev — Vite proxy handles it. |
 
 ---
 
@@ -65,7 +113,15 @@ sec4/
 | ------ | ---------------- | ---------- | --------------------------------------------------------------------- |
 | POST   | `/auth/register` | Public     | Hash password with bcrypt, store user                                 |
 | POST   | `/auth/login`    | Public     | Verify hash, issue JWT as HttpOnly cookie                             |
+| POST   | `/auth/logout`   | Public     | Clear the auth cookie server-side (required — cookie is HttpOnly)     |
 | GET    | `/auth/me`       | JWT Cookie | Return current user id + email. Called on app load to restore session |
+
+### Feed — `/api/feed`
+
+| Method | Path                    | Auth       | Description                                                      |
+| ------ | ----------------------- | ---------- | ---------------------------------------------------------------- |
+| GET    | `/api/feed/recent`      | Public     | Up to 500 most recent filings across all companies               |
+| GET    | `/api/feed/watchlist`   | JWT Cookie | Filings for companies on the current user's watchlist (up to 500)|
 
 ### SEC Data — `/api`
 
@@ -77,15 +133,16 @@ sec4/
 | GET    | `/api/form4/xml`        | Public | Return raw Form 4 XML text                                      |
 | GET    | `/api/form4/xml-locate` | Public | Return URL of XML file inside an EDGAR filing index             |
 
-### Watchlist — `/watchlist`
+### Watchlist — `/api/watchlist`
 
 > All watchlist routes require a valid JWT cookie
 
-| Method | Path         | Description                                          |
-| ------ | ------------ | ---------------------------------------------------- |
-| GET    | `/watchlist` | Return all companies on the current user's watchlist |
-| POST   | `/watchlist` | Add a company by companyId                           |
-| DELETE | `/watchlist` | Remove a company by companyId                        |
+| Method | Path                     | Description                                          |
+| ------ | ------------------------ | ---------------------------------------------------- |
+| GET    | `/api/watchlist`         | Return all companies on the current user's watchlist |
+| POST   | `/api/watchlist`         | Add a company by `companyId`                         |
+| DELETE | `/api/watchlist`         | Remove a company by `companyId`                      |
+| POST   | `/api/watchlist/ticker`  | Resolve a ticker symbol and add it to the watchlist  |
 
 ### Health
 
@@ -156,6 +213,8 @@ Composite PK on `(user_id, company_id)`. Indexed on both columns.
 | owner_name         | TEXT NOT NULL    | Reporting owner full name                                |
 | owner_title        | TEXT             | e.g. CEO, CFO, Director                                  |
 
+> **Note on empty transactions:** The ingestor only parses `nonDerivativeTable` rows. Filings that contain only derivative activity (options, RSUs) or are holdings-only amendments will have zero rows in `form4_transactions`. This is expected data, not a bug — the UI surfaces a plain-language explanation on those cards.
+
 ---
 
 ## Scheduler
@@ -196,8 +255,9 @@ If a filing insert fails, only that filing rolls back. The company record and al
 ## Security Decisions
 
 - **JWT in HttpOnly cookie** — not localStorage. JavaScript cannot read it, preventing XSS token theft
-- **Cookie flags:** `httpOnly: true`, `secure: true` in production, `sameSite: lax`, 7 day expiry
-- **CORS:** `credentials: true` + explicit origin `localhost:5173` — no wildcard
+- **Cookie flags:** `httpOnly: true`, `secure: true` in production, `sameSite: none` (cross-origin Render deployment), 7-day expiry
+- **Logout clears cookie server-side** — the only reliable way to expire an HttpOnly cookie. Client-side `document.cookie` cannot touch it
+- **CORS:** `credentials: true` + explicit origin from `FRONTEND_URL` env var in production, `localhost:5173` in dev — no wildcard
 - **User enumeration prevention:** same error message for wrong email and wrong password
 - **Parameterized SQL queries everywhere** — prevents SQL injection
 - **`verifyUser` applied at router level** in `index.ts`, not per-route — impossible to accidentally expose a protected route
@@ -205,7 +265,7 @@ If a filing insert fails, only that filing rolls back. The company record and al
 
 ---
 
-## Frontend Plan
+## Frontend
 
 ### Auth Flow
 
@@ -213,17 +273,78 @@ On app load React silently calls `GET /auth/me`. The browser automatically sends
 
 ### Pages
 
-| Page             | Auth      | Description                                                         |
-| ---------------- | --------- | ------------------------------------------------------------------- |
-| Login / Register | Public    | Create account or sign in                                           |
-| Feed             | Public    | All recent transactions across all companies, reverse-chronological |
-| Company          | Public    | Filings and transactions for a single company                       |
-| Watchlist        | Protected | Personal filtered feed for watched companies                        |
+| Page       | Route        | Auth      | Description                                                           |
+| ---------- | ------------ | --------- | --------------------------------------------------------------------- |
+| Login      | `/login`     | Public    | Sign in with email + password                                         |
+| Register   | `/register`  | Public    | Create an account                                                     |
+| Dashboard  | `/`          | Public    | All recent filings across all companies — filters, pagination, charts |
+| Watchlist  | `/watchlist` | Protected | Personal feed for watched companies — pagination, sentiment sidebar   |
+
+### Key Components
+
+| Component        | Description                                                                 |
+| ---------------- | --------------------------------------------------------------------------- |
+| `FilingCard`     | Renders a single filing as a readable sentence. Includes a collapsible info panel (accession #, dates, copy-to-clipboard, EDGAR link) toggled by an info button next to the bookmark. Empty-transaction filings show an explanation instead of a blank card. |
+| `InsightSummary` | Four-cell stats grid: Buy Activity, Sell Activity, Net Sentiment, Top Companies |
+| `Charts`         | `BuySellBar` (SVG bar chart) + `ActivitySparkline` (stacked daily bar chart for the last 7 days, zero-filled so quiet days still appear) |
+| `FilterBar`      | Client-side filters: direction (all/buy/sell), min transaction value, time range |
+| `Tooltip`        | Hover tooltip — 352px wide, viewport-clamped so it never runs off-screen   |
+| `ProtectedRoute` | Redirects to `/login` while `AuthContext` is loading, then gates on `user` |
+
+### Pagination
+
+Both the Dashboard and Watchlist use URL search params for page state (`?page=2`). This means:
+
+- Browser **back/forward** buttons move between pages correctly
+- Refreshing a paginated URL lands on the same page
+- Filter changes reset to page 1 using `{ replace: true }` so the reset doesn't litter the history stack
+- Dashboard: **10 company groups per page** (groups contain all filings for that company)
+- Watchlist: **15 filings per page**
+
+### Activity Over Time Chart
+
+The chart always covers the **last 7 calendar days** regardless of which page of filings is displayed. Days are built from local time (not UTC) to avoid off-by-one errors in non-UTC timezones. Zero-filled buckets ensure every day of the week renders a bar even if there was no activity.
+
+### `apiUrl` Utility
+
+All `fetch` calls go through `src/lib/api.ts`:
+
+```ts
+export const API_URL = import.meta.env.VITE_API_URL ?? "";
+export function apiUrl(path: string): string {
+  return `${API_URL}${path}`;
+}
+```
+
+In local dev `VITE_API_URL` is unset — calls are relative and Vite proxies them to `localhost:3001`. In production it equals `https://sec4-server.onrender.com`, so every call reaches the backend service directly.
 
 ### State Management
 
 - `AuthContext` wraps the app and calls `/auth/me` on mount
-- Provides `userId`, `email`, and `isLoggedIn` to all pages
+- Provides `user` (`{ userId, email }`), `loading`, `login`, `register`, `logout`
 - No auth state in localStorage — identity comes entirely from the HttpOnly cookie
+- Watchlist IDs cached in component state and updated optimistically on watch/unwatch
 
 ---
+
+## Deployment (Render)
+
+| Service    | Type           | URL                                  |
+| ---------- | -------------- | ------------------------------------ |
+| Frontend   | Static Site    | `https://sec4-client.onrender.com`   |
+| Backend    | Web Service    | `https://sec4-server.onrender.com`   |
+| Database   | PostgreSQL     | Render managed instance              |
+
+### SPA Routing Fix
+
+`public/_redirects` contains a single catch-all rule:
+
+```
+/* /index.html 200
+```
+
+Without this, refreshing any client-side route (e.g. `/watchlist`) on Render's static host returns a 404 because there is no static file at that path. Vite copies the `public/` directory verbatim into `dist/` on every build.
+
+### Cookie `sameSite: none`
+
+Because the frontend and backend are on different Render subdomains (cross-origin), cookies must use `sameSite: none; Secure`. This is set conditionally in `auth.controller.ts` when `NODE_ENV === production`.
