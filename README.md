@@ -84,27 +84,6 @@ sec4/
 
 ---
 
-## Environment Variables
-
-### Backend (set in Render dashboard or `.env`)
-
-| Variable       | Description                                                      |
-| -------------- | ---------------------------------------------------------------- |
-| `DATABASE_URL` | PostgreSQL connection string (Render external URL)               |
-| `JWT_SECRET`   | Long random hex string used to sign JWTs                         |
-| `USER_AGENT`   | Value for `User-Agent` header on EDGAR requests                  |
-| `NODE_ENV`     | `production` enables secure cookies and tightens CORS            |
-| `FRONTEND_URL` | Allowed CORS origin in production (e.g. `https://…onrender.com`) |
-| `PORT`         | HTTP port — defaults to `3001`                                   |
-
-### Frontend (Vite build-time)
-
-| Variable        | Description                                                         |
-| --------------- | ------------------------------------------------------------------- |
-| `VITE_API_URL`  | Backend base URL in production (e.g. `https://sec4-server.onrender.com`). Empty string in local dev — Vite proxy handles it. |
-
----
-
 ## API Routes
 
 ### Auth — `/auth`
@@ -332,19 +311,5 @@ In local dev `VITE_API_URL` is unset — calls are relative and Vite proxies the
 | Service    | Type           | URL                                  |
 | ---------- | -------------- | ------------------------------------ |
 | Frontend   | Static Site    | `https://sec4-client.onrender.com`   |
-| Backend    | Web Service    | `https://sec4-server.onrender.com`   |
+| Backend    | Web Service    |   Render managed |
 | Database   | PostgreSQL     | Render managed instance              |
-
-### SPA Routing Fix
-
-`public/_redirects` contains a single catch-all rule:
-
-```
-/* /index.html 200
-```
-
-Without this, refreshing any client-side route (e.g. `/watchlist`) on Render's static host returns a 404 because there is no static file at that path. Vite copies the `public/` directory verbatim into `dist/` on every build.
-
-### Cookie `sameSite: none`
-
-Because the frontend and backend are on different Render subdomains (cross-origin), cookies must use `sameSite: none; Secure`. This is set conditionally in `auth.controller.ts` when `NODE_ENV === production`.
