@@ -643,7 +643,11 @@ function groupByCompany(filings: Filing[]): CompanyGroupData[] {
     }
   }
 
-  return Array.from(map.values()).sort(
-    (a, b) => b.filings.length - a.filings.length,
-  );
+  // Sort groups by the date of their most recent filing so companies with
+  // activity today appear at the top, in true reverse-chronological order.
+  return Array.from(map.values()).sort((a, b) => {
+    const dateA = a.filings[0]?.filing_date ?? "";
+    const dateB = b.filings[0]?.filing_date ?? "";
+    return dateB.localeCompare(dateA);
+  });
 }
