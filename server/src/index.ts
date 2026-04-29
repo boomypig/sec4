@@ -41,4 +41,4 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-startScheduler(); // add this
+startScheduler();
