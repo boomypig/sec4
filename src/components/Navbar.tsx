@@ -1,9 +1,33 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useState, useRef, useEffect } from "react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
+
+  // Close on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  /** Initials avatar from email */
+  function initials(email: string) {
+    return email[0].toUpperCase();
+  }
 
   return (
     <header className="bg-surface text-primary font-sans tracking-tight w-full h-14 border-b border-outline-variant/[.1] flex justify-between items-center px-6 sticky top-0 z-50">
@@ -42,18 +66,60 @@ export default function Navbar() {
       {/* Right: Auth */}
       <div className="flex items-center gap-4">
         {user ? (
-          <>
-            <span className="text-on-surface-variant text-xs hidden sm:inline">
-              {user.email}
-            </span>
+          <div className="relative" ref={menuRef}>
+            {/* Avatar button */}
             <button
-              onClick={logout}
-              className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex items-center gap-2 px-2 py-1 rounded-sm hover:bg-surface-container-high transition-colors group"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
             >
-              <span className="material-symbols-outlined text-sm">logout</span>
-              Logout
+              {/* Initials circle */}
+              <span className="w-7 h-7 rounded-full bg-primary-container text-on-primary-container text-xs font-bold flex items-center justify-center shrink-0">
+                {initials(user.email)}
+              </span>
+              {/* Email — hidden on small screens */}
+              <span className="text-on-surface-variant text-xs hidden sm:inline max-w-[160px] truncate">
+                {user.email}
+              </span>
+              {/* Chevron */}
+              <span
+                className={`material-symbols-outlined text-on-surface-variant text-sm transition-transform duration-200 ${
+                  menuOpen ? "rotate-180" : ""
+                }`}
+              >
+                expand_more
+              </span>
             </button>
-          </>
+
+            {/* Dropdown panel */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-52 bg-surface-container border border-outline-variant/20 rounded shadow-lg py-1 z-50">
+                {/* Account header */}
+                <div className="px-4 py-2.5 border-b border-outline-variant/10">
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-semibold">
+                    Account
+                  </p>
+                  <p className="text-xs text-on-surface mt-0.5 truncate">{user.email}</p>
+                </div>
+
+                {/* Menu items */}
+                <div className="py-1">
+                  {/* — future items go here — */}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-on-surface-variant hover:text-error hover:bg-error/5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <Link
             to="/login"
