@@ -8,6 +8,9 @@ A full-stack web app that aggregates SEC Form 4 insider trading filings into a c
 
 **Live:** [https://sec4-client.onrender.com](https://sec4-client.onrender.com)
 
+<img width="1919" height="880" alt="image" src="https://github.com/user-attachments/assets/794d251c-bc3f-4fdb-80b2-c7fa074aac09" />
+
+
 ---
 
 ## Tech Stack
