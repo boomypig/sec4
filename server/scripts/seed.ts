@@ -1,4 +1,4 @@
-// server/src/scripts/seedCompanies.ts
+// server/scripts/seed.ts
 // Run once manually: npx tsx src/scripts/seedCompanies.ts
 // Requires company_tickers.json in the same directory
 // Download from: https://www.sec.gov/files/company_tickers.json
