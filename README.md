@@ -315,4 +315,4 @@ In local dev `VITE_API_URL` is unset — calls are relative and Vite proxies the
 | ---------- | -------------- | ------------------------------------ |
 | Frontend   | Static Site    | `https://sec4-client.onrender.com`   |
 | Backend    | Web Service    |   Render managed |
-| Database   | PostgreSQL     | Render managed instance              |
+| Database   | PostgreSQL     | Managed on Neon          |
