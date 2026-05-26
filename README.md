@@ -163,7 +163,6 @@ sec4/
 | company_id | UUID FK NOT NULL     | References companies(id), CASCADE delete |
 | created_at | TIMESTAMPTZ NOT NULL | Defaults to now()                        |
 
-Composite PK on `(user_id, company_id)`. Indexed on both columns.
 
 ### `form4_filings`
 
