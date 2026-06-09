@@ -44,9 +44,6 @@ export default function Navbar() {
             <span className="text-sm font-extrabold tracking-tighter text-primary uppercase">
               Insider Track
             </span>
-            <span className="text-[8px] block text-on-surface-variant uppercase tracking-[0.15em] -mt-0.5">
-              SEC Form 4 Feed
-            </span>
           </div>
         </Link>
 
