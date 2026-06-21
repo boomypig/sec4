@@ -186,10 +186,10 @@ sec4/
 | transaction_date   | TIMESTAMPTZ      | Nullable                                                 |
 | transaction_code   | TEXT             | P=Purchase, S=Sale, M=Option exercise, F=Tax withholding |
 | acquired_disposed  | TEXT             | A=Acquired, D=Disposed                                   |
-| shares             | NUMERIC(20,4)    | Widened from (15,4) to handle large holders              |
-| price_per_share    | NUMERIC(20,4)    |                                                          |
-| value_total        | NUMERIC(20,4)    | shares × price_per_share                                 |
-| shares_owned_after | NUMERIC(20,4)    |                                                          |
+| shares             | NUMERIC(25,4)    | Widened from (15,4) to handle large holders              |
+| price_per_share    | NUMERIC(25,4)    |                                                          |
+| value_total        | NUMERIC(25,4)    | shares × price_per_share                                 |
+| shares_owned_after | NUMERIC(25,4)    |                                                          |
 | ownership_nature   | TEXT             | D=Direct, I=Indirect                                     |
 | owner_name         | TEXT NOT NULL    | Reporting owner full name                                |
 | owner_title        | TEXT             | e.g. CEO, CFO, Director                                  |
