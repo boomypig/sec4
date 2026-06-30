@@ -19,7 +19,7 @@ A full-stack web app that aggregates SEC Form 4 insider trading filings into a c
 | ------------ | ------------------------------------------------------- |
 | Frontend     | React + TypeScript + Vite (port 5173)                   |
 | Styling      | Tailwind CSS + Material Symbols (Google Fonts)          |
-| Routing      | React Router v6 (`useSearchParams` for pagination)      |
+| Routing      | React Router v6    |
 | Backend      | Node.js + Express + TypeScript (port 3001)              |
 | Database     | PostgreSQL (db: sec4)                                   |
 | Auth         | bcrypt + JWT in HttpOnly cookies                        |
