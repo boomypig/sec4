@@ -238,7 +238,7 @@ If a filing insert fails, only that filing rolls back. The company record and al
 - **JWT in HttpOnly cookie** — not localStorage. JavaScript cannot read it, preventing XSS token theft
 - **Cookie flags:** `httpOnly: true`, `secure: true` in production, `sameSite: none` (cross-origin Render deployment), 7-day expiry
 - **Logout clears cookie server-side** — the only reliable way to expire an HttpOnly cookie. Client-side `document.cookie` cannot touch it
-- **CORS:** `credentials: true` + explicit origin from `FRONTEND_URL` env var in production, `localhost:5173` in dev — no wildcard
+- **CORS:** `credentials: true` + explicit origin from `FRONTEND_URL` env var in production, `localhost:5173` in dev
 - **User enumeration prevention:** same error message for wrong email and wrong password
 - **Parameterized SQL queries everywhere** — prevents SQL injection
 - **`verifyUser` applied at router level** in `index.ts`, not per-route — impossible to accidentally expose a protected route
